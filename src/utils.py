@@ -93,7 +93,7 @@ def calculate_quartiles(column):
     return (min(sorted_column), Q1, Q2, Q3, max(sorted_column))
 
 
-def histogram_plot(column):
+def histogram_plot(df):
     """
     Generate a histogram plot for a given numerical column.
 
@@ -111,9 +111,23 @@ def histogram_plot(column):
     Note: You need to have Matplotlib installed to use this function.
     """
 
-    plt.figure()
-    plt.hist(
-        column, bins=range(int(min(column)), int(max(column)) + 1), edgecolor="black"
-    )
-    plt.title("Histogram plot")
+    # plt.figure()
+    # plt.hist(
+    #     column, bins=range(int(min(column)), int(max(column)) + 1), edgecolor="black"
+    # )
+    # plt.title("Histogram plot")
+    # plt.show()
+
+    fig, axs = plt.subplots(int(df.shape[1] / 4) + 1, 4, figsize=(12, 12))
+
+    for i, column in enumerate(df.columns):
+        ax = axs[i // 4, i % 4]
+        ax.hist(
+            df[column],
+            bins=range(int(min(df[column])), int(max(df[column])) + 1),
+            edgecolor="black",
+        )
+        ax.set_title(f"Histogram for {column}")
+
+    plt.tight_layout()
     plt.show()
