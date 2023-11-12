@@ -124,7 +124,23 @@ def histogram_plot(df):
         ax = axs[i // 4, i % 4]
         ax.hist(
             df[column],
-            bins=range(int(min(df[column])), int(max(df[column])) + 1),
+            # bins=range(int(min(df[column])), int(max(df[column])) + 1),
+            edgecolor="black",
+        )
+        ax.set_title(f"Histogram for {column}")
+
+    plt.tight_layout()
+    plt.show()
+
+
+def bar_plot(df):
+    fig, axs = plt.subplots(int(df.shape[1] / 4) + 1, 4, figsize=(12, 12))
+
+    for i, column in enumerate(df.columns):
+        ax = axs[i // 4, i % 4]
+        ax.bar(
+            df[column],
+            # bins=range(int(min(df[column])), int(max(df[column])) + 1),
             edgecolor="black",
         )
         ax.set_title(f"Histogram for {column}")
