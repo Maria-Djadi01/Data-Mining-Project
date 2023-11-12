@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 def central_tendances(column):
@@ -95,29 +96,30 @@ def calculate_quartiles(column):
 
 def histogram_plot(df):
     """
-    Generate a histogram plot for a given numerical column.
+    Generate a grid of histogram plots for each column in a DataFrame.
 
     Parameters:
-    - column (iterable): A list or iterable containing numerical data.
+    - df (DataFrame): The input DataFrame containing numerical data.
 
-    This function creates a histogram plot to visualize the distribution of numerical data in the specified column. The histogram is a graphical representation of the frequency distribution of data, with data divided into bins, and the height of each bar representing the frequency of data points in that bin.
+    This function creates a grid of histogram plots, with each subplot corresponding to a column in the DataFrame. It uses Matplotlib to visualize the distribution of numerical data in each column.
 
-    The function uses Matplotlib for plotting and automatically determines the appropriate number of bins based on the data's range.
+    The number of rows in the subplot grid is determined based on the number of columns in the DataFrame, and the figure size is set to (12, 12) by default. The function automatically calculates the appropriate number of bins for each histogram based on the data's range.
 
     Example:
-    >>> data = [10, 15, 20, 25, 30, 35, 40, 45, 50]
-    >>> histogram_plot(data)
+    >>> import pandas as pd
+    >>> import matplotlib.pyplot as plt
 
-    Note: You need to have Matplotlib installed to use this function.
+    >>> # Create a sample DataFrame
+    >>> data = {'A': [10, 15, 20, 25, 30],
+    ...         'B': [5, 10, 15, 20, 25],
+    ...         'C': [15, 20, 25, 30, 35]}
+    >>> df = pd.DataFrame(data)
+
+    >>> # Plot histograms for each column in the DataFrame
+    >>> plot_histograms(df)
+
+    Note: You need to have Matplotlib and Pandas installed to use this function.
     """
-
-    # plt.figure()
-    # plt.hist(
-    #     column, bins=range(int(min(column)), int(max(column)) + 1), edgecolor="black"
-    # )
-    # plt.title("Histogram plot")
-    # plt.show()
-
     fig, axs = plt.subplots(int(df.shape[1] / 4) + 1, 4, figsize=(12, 12))
 
     for i, column in enumerate(df.columns):
@@ -130,4 +132,54 @@ def histogram_plot(df):
         ax.set_title(f"Histogram for {column}")
 
     plt.tight_layout()
+    plt.show()
+
+
+def box_plot(df):
+    fig, axs = plt.subplots(int(df.shape[1] / 4) + 1, 4, figsize=(12, 12))
+
+    for i, column in enumerate(df.columns):
+        ax = axs[i // 4, i % 4]
+
+        # Filter out nan values before plotting
+        data_to_plot = df[column].dropna().values
+
+        ax.boxplot(
+            data_to_plot,
+        )
+        ax.set_title(f"Box Plot for {column}")
+
+    plt.tight_layout()
+    plt.show()
+
+
+def correlation_plots(static_df):
+    """
+    Visualize data using scatter plots and a correlation heatmap.
+
+    Parameters:
+    - static_df (DataFrame): The input DataFrame containing numerical data.
+
+    This function creates scatter plots for all pairs of numerical columns in the DataFrame
+    and displays a correlation heatmap for the entire DataFrame.
+
+    Example:
+    >>> import pandas as pd
+    >>> # Assuming your DataFrame is named 'static_df'
+    >>> visualize_data(static_df)
+    """
+    sns.set(style="whitegrid")
+
+    sns.pairplot(static_df)
+    plt.show()
+
+    correlation_matrix = static_df.corr()
+
+    plt.figure(figsize=(10, 8))
+
+    sns.heatmap(
+        correlation_matrix, annot=True, cmap="coolwarm", fmt=".2f", linewidths=0.5
+    )
+
+    plt.title("Correlation Heatmap")
     plt.show()
