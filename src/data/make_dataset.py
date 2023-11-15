@@ -15,6 +15,11 @@ static_dataset_df = pd.read_csv(download_link)
 static_dataset_df.to_csv("../../data/raw/static_dataset.csv")
 
 
+static_dataset_df["P"] = pd.to_numeric(static_dataset_df["P"], errors="coerce")
+
+static_dataset_df.to_csv("../../data/interim/processed_static_dataset.csv")
+
+
 # --------------------------------------------------------------
 # Read  Time Series file
 # --------------------------------------------------------------
