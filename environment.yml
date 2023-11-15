@@ -4,8 +4,8 @@
 #
 #    conda env create -f environment.yml
 #    conda env update --file environment.yml --prune
-#    conda env export --name tracking-barbell-exercises > environment.yml
-#    conda env remove --name tracking-barbell-exercises
+#    conda env export --name env > environment.yml
+#    conda env remove --name env
 #    conda env list
 
 name: env
