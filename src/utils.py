@@ -169,27 +169,27 @@ def box_plot(df):
     plt.show()
 
 
-def correlation_plots(static_df):
+def correlation_plots(df):
     """
     Visualize data using scatter plots and a correlation heatmap.
 
     Parameters:
-    - static_df (DataFrame): The input DataFrame containing numerical data.
+    - df (DataFrame): The input DataFrame containing numerical data.
 
     This function creates scatter plots for all pairs of numerical columns in the DataFrame
     and displays a correlation heatmap for the entire DataFrame.
 
     Example:
     >>> import pandas as pd
-    >>> # Assuming your DataFrame is named 'static_df'
-    >>> visualize_data(static_df)
+    >>> # Assuming your DataFrame is named 'df'
+    >>> visualize_data(df)
     """
     sns.set(style="whitegrid")
 
-    sns.pairplot(static_df)
+    sns.pairplot(df)
     plt.show()
 
-    correlation_matrix = static_df.corr()
+    correlation_matrix = df.corr()
 
     plt.figure(figsize=(10, 8))
 
