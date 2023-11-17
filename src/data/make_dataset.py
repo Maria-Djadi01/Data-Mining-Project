@@ -46,46 +46,52 @@ tempo_dataset_df_processed = pd.read_csv("../../data/raw/temp_dataset.csv")
 # object.
 
 # The issue with the second format is that it doesn't have the year, so we need
-# to add it. We will convert the start date of the first format and pick the
-# most frequent year and use it to fill the year of the second format.
+# to add it. 
 
-# create a seperate column that contains the "%m/%d/%Y" format
-start_date_column = pd.DataFrame()
-for idx, date in enumerate(tempo_dataset_df_processed["Start date"]):
-    if "/" in date:
-        start_date_column.at[idx, "Start date"] = pd.to_datetime(
-            date, format="%m/%d/%Y"
-        )
+df_time_fixed = tempo_dataset_df_processed.copy()
+# Filter rows with and without a '/' in the 'Start date' column
+filtered_df_with_year = df_time_fixed[df_time_fixed["Start date"].str.contains(
+    "/")]
+filtered_df_without_year = df_time_fixed[~df_time_fixed["Start date"].str.contains("/")][
+    ["Start date", "end date", "time_period"]
+]
 
-# pick the most frequent year
-year_mode = central_tendances(start_date_column["Start date"].dt.year)[2]
-# Convert 'Start date' column based on date format
-for idx, date in enumerate(tempo_dataset_df_processed["Start date"]):
-    if "/" in date:
-        tempo_dataset_df_processed.at[idx, "Start date"] = pd.to_datetime(
-            date, format="%m/%d/%Y"
-        )
-    else:
-        tempo_dataset_df_processed.at[idx, "Start date"] = pd.to_datetime(
-            date + "-2021", format="%d-%b-%Y"
-        )
+# Convert the 'Start date' column to datetime format using .loc
+filtered_df_with_year.loc[:, "year"] = pd.to_datetime(
+    filtered_df_with_year["Start date"]
+).dt.year
 
-# Repeat the same process for 'End date' column if needed
-for idx, date in enumerate(tempo_dataset_df_processed["end date"]):
-    if "/" in date:
-        tempo_dataset_df_processed.at[idx, "end date"] = pd.to_datetime(
-            date, format="%m/%d/%Y"
-        )
-    else:
-        tempo_dataset_df_processed.at[idx, "end date"] = pd.to_datetime(
-            date + "-2021", format="%d-%b-%Y"
-        )
+# Select the relevant columns
+start_date_column_with_year = filtered_df_with_year[[
+    "year", "Start date", "end date", "time_period"]]
+
+for index, row in filtered_df_without_year.iterrows():
+    if row["time_period"] not in start_date_column_with_year["time_period"].values:
+        df_time_fixed.drop(index, inplace=True)
+        continue
+    time_period = row["time_period"]
+    year = start_date_column_with_year.loc[
+        start_date_column_with_year["time_period"] == time_period, "year"
+    ].iloc[0]
+
+    df_time_fixed["Start date"].loc[index] = pd.to_datetime(
+        df_time_fixed["Start date"].loc[index] + '-' + str(int(year)))
+    df_time_fixed["end date"].loc[index] = pd.to_datetime(
+        df_time_fixed["end date"].loc[index] + '-' + str(int(year)))
+
+for index, row in filtered_df_with_year.iterrows():
+    df_time_fixed['Start date'].loc[index] = pd.to_datetime(
+        df_time_fixed['Start date'].loc[index])
+    df_time_fixed['end date'].loc[index] = pd.to_datetime(
+        df_time_fixed['end date'].loc[index])
+
+tempo_dataset_df_processed = df_time_fixed
 
 column_order = [
     "zcta",
+    "time_period",
     "Start date",
     "end date",
-    "time_period",
     "population",
     "test count",
     "positive tests",
@@ -97,7 +103,7 @@ column_order = [
 
 # To improve data readability, we will reorder columns and the rows according
 # to Start date and the state zip code
-df = tempo_dataset_df_processed[column_order].sort_values(by=["zcta", "Start date"])
+tempo_dataset_df_processed = tempo_dataset_df_processed[column_order].sort_values(by=["zcta", "Start date"])
 # turn zcta into object
 
 tempo_dataset_df_processed.to_csv("../../data/interim/temp_dataset_processed.csv")
