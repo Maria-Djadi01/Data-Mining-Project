@@ -1,6 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import math
+import scipy
+
+# --------------------------------------------------------------
+# Central Tendencies (distribution based)
+# --------------------------------------------------------------
 
 
 def central_tendances(column):
@@ -56,6 +62,11 @@ def central_tendances(column):
     return mean, median, mode
 
 
+# --------------------------------------------------------------
+# Quartiles (distribution based)
+# --------------------------------------------------------------
+
+
 def calculate_quartiles(column):
     """
     Calculate quartiles for a given numerical column.
@@ -80,9 +91,9 @@ def calculate_quartiles(column):
 
     nrows = len(column)
     sorted_column = np.sort(column)
-    Q1_index = int(0.25 * (nrows + 1))
-    Q2_index = int(0.5 * (nrows + 1))
-    Q3_index = int(0.75 * (nrows + 1))
+    Q1_index = int(0.25 * (nrows - 1))
+    Q2_index = int(0.5 * (nrows - 1))
+    Q3_index = int(0.75 * (nrows - 1))
     if nrows % 2 == 0:
         Q1 = (sorted_column[Q1_index] + sorted_column[Q1_index + 1]) / 2
         Q2 = (sorted_column[Q2_index] + sorted_column[Q2_index + 1]) / 2
@@ -92,6 +103,62 @@ def calculate_quartiles(column):
         Q2 = sorted_column[Q2_index]
         Q3 = sorted_column[Q3_index]
     return (min(sorted_column), Q1, Q2, Q3, max(sorted_column))
+
+
+# --------------------------------------------------------------
+# Chauvenets criteron (distribution based)
+# --------------------------------------------------------------
+
+
+# TODO: Understand the function of chauvenets criterion
+def mark_outliers_chauvenet(dataset, col, C=2):
+    """Finds outliers in the specified column of datatable and adds a binary column with
+    the same name extended with '_outlier' that expresses the result per data point.
+
+    Taken from: https://github.com/mhoogen/ML4QS/blob/master/Python3Code/Chapter3/OutlierDetection.py
+
+    Args:
+        dataset (pd.DataFrame): The dataset
+        col (string): The column you want apply outlier detection to
+        C (int, optional): Degree of certainty for the identification of outliers given the assumption
+                           of a normal distribution, typicaly between 1 - 10. Defaults to 2.
+
+    Returns:
+        pd.DataFrame: The original dataframe with an extra boolean column
+        indicating whether the value is an outlier or not.
+    """
+
+    dataset = dataset.copy()
+    # Compute the mean and standard deviation.
+    mean = dataset[col].mean()
+    std = dataset[col].std()
+    N = len(dataset.index)
+    criterion = 1.0 / (C * N)
+
+    # Consider the deviation for the data points.
+    deviation = abs(dataset[col] - mean) / std
+
+    # Express the upper and lower bounds.
+    low = -deviation / math.sqrt(C)
+    high = deviation / math.sqrt(C)
+    prob = []
+    mask = []
+
+    # Pass all rows in the dataset.
+    for i, (index, row) in enumerate(dataset.iterrows()):
+        # Determine the probability of observing the point
+        prob.append(
+            1.0 - 0.5 * (scipy.special.erf(high[index]) - scipy.special.erf(low[index]))
+        )
+        # And mark as an outlier when the probability is below our criterion.
+        mask.append(prob[i] < criterion)
+    dataset[col + "_outlier"] = mask
+    return dataset
+
+
+# --------------------------------------------------------------
+# Histogram Plots
+# --------------------------------------------------------------
 
 
 def histogram_plot(df):
@@ -135,6 +202,11 @@ def histogram_plot(df):
     plt.show()
 
 
+# --------------------------------------------------------------
+# Bar plots
+# --------------------------------------------------------------
+
+
 def bar_plot(df):
     fig, axs = plt.subplots(int(df.shape[1] / 4) + 1, 4, figsize=(12, 12))
 
@@ -149,6 +221,11 @@ def bar_plot(df):
 
     plt.tight_layout()
     plt.show()
+
+
+# --------------------------------------------------------------
+# Box plots
+# --------------------------------------------------------------
 
 
 def box_plot(df):
@@ -167,6 +244,11 @@ def box_plot(df):
 
     plt.tight_layout()
     plt.show()
+
+
+# --------------------------------------------------------------
+# Correlation plots
+# --------------------------------------------------------------
 
 
 def correlation_plots(df):
@@ -198,4 +280,41 @@ def correlation_plots(df):
     )
 
     plt.title("Correlation Heatmap")
+    plt.show()
+
+
+# --------------------------------------------------------------
+# Quartiles Plots
+# --------------------------------------------------------------
+
+
+def plot_outliers(dataset, col, quartiles, reset_index):
+    """Plot quartiles for a given dataset and column.
+
+    Args:
+        dataset (pd.DataFrame): The dataset.
+        col (string): Column that you want to plot.
+        quartiles (tuple): A tuple containing min, Q1, Q2, Q3, and max values.
+        reset_index (bool): Whether to reset the index for plotting.
+    """
+
+    dataset = dataset.dropna(axis=0, subset=[col])
+
+    if reset_index:
+        dataset = dataset.reset_index()
+
+    fig, ax = plt.subplots()
+
+    plt.xlabel("samples")
+    plt.ylabel("value")
+
+    # Plot quartiles
+    ax.axhline(quartiles[1], color="g", linestyle="--", label="Q1")
+    ax.axhline(quartiles[2], color="b", linestyle="--", label="Q2 (Median)")
+    ax.axhline(quartiles[3], color="y", linestyle="--", label="Q3")
+
+    # Plot data points
+    ax.plot(dataset.index, dataset[col], "+")
+
+    plt.legend(loc="upper center", ncol=2, fancybox=True, shadow=True)
     plt.show()

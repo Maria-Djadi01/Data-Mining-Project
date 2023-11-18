@@ -11,12 +11,14 @@ warnings.filterwarnings("ignore")
 # Load data
 # ----------------------------------------------------------------#
 
-df = pd.read_csv("../../../data/interim/temp_dataset_processed.csv")
-df.drop(columns=["Unnamed: 0", "Unnamed: 0.1"], inplace=True)
-# Load data #
-# ----------------------------------------------------------------#
+# df = pd.read_csv("../../../data/interim/temp_dataset_processed.csv")
+# df.drop(columns=["Unnamed: 0", "Unnamed: 0.1"], inplace=True)
+# # Load data #
+# # ----------------------------------------------------------------#
 
 df = pd.read_csv("../../../data/interim/temp_dataset_processed.csv", index_col=0)
+
+# df = pd.read_csv("../../../data/interim/temp_dataset_processed.csv", index_col=0)
 # df.drop(columns=["Unnamed: 0", "Unnamed: 0.1"], inplace=True)
 
 # --------------------------------------------------------------#
