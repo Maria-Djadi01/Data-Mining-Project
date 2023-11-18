@@ -82,7 +82,6 @@ df_time_fixed["end date"] = df_time_fixed["end date"].dt.date
 tempo_dataset_df_processed = df_time_fixed
 
 
-
 # convert zcta to str
 tempo_dataset_df_processed["zcta"] = tempo_dataset_df_processed["zcta"].astype(int)
 
@@ -99,7 +98,7 @@ tempo_dataset_df_processed["Midpoint Date"] = (
 )
 
 # Set the midpoint as the index
-tempo_dataset_df_processed.set_index('Midpoint Date', inplace=True, drop=True)
+tempo_dataset_df_processed.set_index("Midpoint Date", inplace=True, drop=True)
 
 # Drop the 'Start date' and 'End date' columns if needed
 tempo_dataset_df_processed.drop(["Start date", "end date"], axis=1, inplace=True)

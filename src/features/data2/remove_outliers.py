@@ -4,15 +4,17 @@ import math
 import scipy
 import numpy as np
 import warnings
+
 warnings.filterwarnings("ignore")
 
-plt.style.use("fivethirtyeight")
-plt.rcParams["figure.figsize"] = (20, 5)
-plt.rcParams["figure.dpi"] = 100
+# ----------------------------------------------------------------#
+# Load data
+# ----------------------------------------------------------------#
 
-# ----------------------------------------------------------------#
-# Load data #
-# ----------------------------------------------------------------#
+# df = pd.read_csv("../../../data/interim/temp_dataset_processed.csv")
+# df.drop(columns=["Unnamed: 0", "Unnamed: 0.1"], inplace=True)
+# # Load data #
+# # ----------------------------------------------------------------#
 
 df = pd.read_csv("../../../data/interim/02_temp_dataset_fill_miss_val.csv", index_col=0)
 # df.drop(columns=["Unnamed: 0", "Unnamed: 0.1"], inplace=True)
@@ -184,20 +186,20 @@ for col in selected_columns:
 dataset = mark_outliers_chauvenet(df, "case count")
 # number of missing values
 dataset.isnull().sum()
-dataset[dataset['case count' + "_outlier"] == True] = np.nan
+dataset[dataset["case count" + "_outlier"] == True] = np.nan
 # drop the null raws
-dataset = dataset.dropna(how='all')
-dataset.drop(columns=['case count' + "_outlier"], inplace=True)
+dataset = dataset.dropna(how="all")
+dataset.drop(columns=["case count" + "_outlier"], inplace=True)
 
 # Create a loop
 dataset = df.copy()
 for col in selected_columns:
     dataset = mark_outliers_chauvenet(dataset, col)
     dataset[dataset[col + "_outlier"] == True] = np.nan
-    dataset = dataset.dropna(how='all')
-    n_outliers = len(dataset) - len(dataset[col].dropna(how='all'))
+    dataset = dataset.dropna(how="all")
+    n_outliers = len(dataset) - len(dataset[col].dropna(how="all"))
     dataset.drop(columns=[col + "_outlier"], inplace=True)
-    print(f'{col} - {n_outliers} outliers removed')
+    print(f"{col} - {n_outliers} outliers removed")
 
 outliers_removed_df = dataset
 # --------------------------------------------------------------
