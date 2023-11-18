@@ -16,9 +16,7 @@ warnings.filterwarnings("ignore")
 # # Load data #
 # # ----------------------------------------------------------------#
 
-df = pd.read_csv("../../../data/interim/temp_dataset_processed.csv", index_col=0)
-
-# df = pd.read_csv("../../../data/interim/temp_dataset_processed.csv", index_col=0)
+df = pd.read_csv("../../../data/interim/02_temp_dataset_fill_miss_val.csv", index_col=0)
 # df.drop(columns=["Unnamed: 0", "Unnamed: 0.1"], inplace=True)
 
 # --------------------------------------------------------------#
@@ -164,10 +162,10 @@ def mark_outliers_chauvenet(dataset, col, C=2):
     mask = []
 
     # Pass all rows in the dataset.
-    for i, (index, row) in enumerate(dataset.iterrows()):
+    for i in range(0, len(dataset.index)):
         # Determine the probability of observing the point
         prob.append(
-            1.0 - 0.5 * (scipy.special.erf(high[index]) - scipy.special.erf(low[index]))
+            1.0 - 0.5 * (scipy.special.erf(high[i]) - scipy.special.erf(low[i]))
         )
         # And mark as an outlier when the probability is below our criterion.
         mask.append(prob[i] < criterion)
@@ -200,6 +198,7 @@ for col in selected_columns:
     dataset[dataset[col + "_outlier"] == True] = np.nan
     dataset = dataset.dropna(how="all")
     n_outliers = len(dataset) - len(dataset[col].dropna(how="all"))
+    dataset.drop(columns=[col + "_outlier"], inplace=True)
     print(f"{col} - {n_outliers} outliers removed")
 
 outliers_removed_df = dataset
@@ -207,5 +206,7 @@ outliers_removed_df = dataset
 # Export new dataframe
 # --------------------------------------------------------------
 outliers_removed_df.to_csv(
-    "../../../data/interim/02_temp_dataset_processed_outliers_removed.csv"
+    "../../../data/interim/03_temp_dataset_processed_outliers_removed.csv"
 )
+
+outliers_removed_df.info()
