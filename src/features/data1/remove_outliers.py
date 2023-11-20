@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 import math
 import scipy
 
-from src.utils import mark_outliers_iqr, mark_outliers_chauvenet, calculate_quartiles
+
+from src.utils import mark_outliers_chauvenet, mark_outliers_iqr, plot_binary_outliers
 
 # ----------------------------------------------------------------
 # Load data
@@ -30,16 +31,9 @@ for column in outlier_columns:
 # --------------------------------------------------------------
 
 # Loop over all columns
-for col in df.columns:
-    quartiles = calculate_quartiles(df[col])
-
-    # Assuming you have a binary outlier column for each column in your DataFrame
-    outlier_col = f"{col}_outlier"  # Adjust this based on your actual column naming
-
-    # Assuming you have a binary outlier column in your DataFrame
-    df[outlier_col] = (df[col] < quartiles[1]) | (df[col] > quartiles[3])
-
-    plot_binary_outliers(df, col, outlier_col, reset_index=True)
+for col in outlier_columns:
+    dataset = mark_outliers_iqr(df, col)
+    plot_binary_outliers(dataset, col, col + "_outlier", True)
 
 
 # --------------------------------------------------------------
@@ -73,6 +67,7 @@ for col in outlier_columns:
     dataset[dataset[col + "_outlier"] == True] = np.nan
     dataset = dataset.dropna(how="all")
     n_outliers = len(dataset) - len(dataset[col].dropna(how="all"))
+    dataset.drop(columns=[col + "_outlier"], inplace=True)
     print(f"{col} - {n_outliers} outliers removed")
 
 outliers_removed_df = dataset
