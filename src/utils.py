@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import math
 import scipy
+import statsmodels.api as sm
+from scipy import stats
 
 # --------------------------------------------------------------
 # Central Tendencies (distribution based)
@@ -187,10 +189,10 @@ def histogram_plot(df):
 
     Note: You need to have Matplotlib and Pandas installed to use this function.
     """
-    fig, axs = plt.subplots(int(df.shape[1] / 4) + 1, 4, figsize=(12, 12))
+    fig, axs = plt.subplots(int(df.shape[1] / 3) + 1, 3, figsize=(12, 12))
 
     for i, column in enumerate(df.columns):
-        ax = axs[i // 4, i % 4]
+        ax = axs[i // 3, i % 3]
         ax.hist(
             df[column],
             # bins=range(int(min(df[column])), int(max(df[column])) + 1),
@@ -288,17 +290,49 @@ def correlation_plots(df):
 # --------------------------------------------------------------
 
 
-def plot_outliers(dataset, col, quartiles, reset_index):
-    """Plot quartiles for a given dataset and column.
+def mark_outliers_iqr(dataset, col):
+    """Function to mark values as outliers using the IQR method.
 
     Args:
-        dataset (pd.DataFrame): The dataset.
-        col (string): Column that you want to plot.
-        quartiles (tuple): A tuple containing min, Q1, Q2, Q3, and max values.
-        reset_index (bool): Whether to reset the index for plotting.
+        dataset (pd.DataFrame): The dataset
+        col (string): The column you want apply outlier detection to
+
+    Returns:
+        pd.DataFrame: The original dataframe with an extra boolean column
+        indicating whether the value is an outlier or not.
     """
 
-    dataset = dataset.dropna(axis=0, subset=[col])
+    dataset = dataset.copy()
+
+    Q1 = dataset[col].quantile(0.25)
+    Q3 = dataset[col].quantile(0.75)
+    IQR = Q3 - Q1
+
+    lower_fence = Q1 - 1.5 * IQR
+    upper_fence = Q3 + 1.5 * IQR
+
+    dataset[col + "_outlier"] = (dataset[col] < lower_fence) | (
+        dataset[col] > upper_fence
+    )
+
+    return dataset
+
+
+def plot_binary_outliers(dataset, col, outlier_col, reset_index):
+    """Plot outliers in case of a binary outlier score. Here, the col specifies the real data
+    column and outlier_col the columns with a binary value (outlier or not).
+
+    Args:
+        dataset (pd.DataFrame): The dataset
+        col (string): Column that you want to plot
+        outlier_col (string): Outlier column marked with true/false
+        reset_index (bool): whether to reset the index for plotting
+    """
+
+    # Taken from: https://github.com/mhoogen/ML4QS/blob/master/Python3Code/util/VisualizeDataset.py
+
+    dataset = dataset.dropna(axis=0, subset=[col, outlier_col])
+    dataset[outlier_col] = dataset[outlier_col].astype("bool")
 
     if reset_index:
         dataset = dataset.reset_index()
@@ -308,13 +342,40 @@ def plot_outliers(dataset, col, quartiles, reset_index):
     plt.xlabel("samples")
     plt.ylabel("value")
 
-    # Plot quartiles
-    ax.axhline(quartiles[1], color="g", linestyle="--", label="Q1")
-    ax.axhline(quartiles[2], color="b", linestyle="--", label="Q2 (Median)")
-    ax.axhline(quartiles[3], color="y", linestyle="--", label="Q3")
+    # Plot non outliers in default color
+    ax.plot(
+        dataset.index[~dataset[outlier_col]],
+        dataset[col][~dataset[outlier_col]],
+        "+",
+    )
+    # Plot data points that are outliers in red
+    ax.plot(
+        dataset.index[dataset[outlier_col]],
+        dataset[col][dataset[outlier_col]],
+        "r+",
+    )
 
-    # Plot data points
-    ax.plot(dataset.index, dataset[col], "+")
+    plt.legend(
+        ["no outlier " + col, "outlier " + col],
+        loc="upper center",
+        ncol=2,
+        fancybox=True,
+        shadow=True,
+    )
+    plt.show()
 
-    plt.legend(loc="upper center", ncol=2, fancybox=True, shadow=True)
+
+# Q-Q Plot
+def qq_plot(df):
+    fig, axes = plt.subplots(
+        nrows=len(df.columns),
+        figsize=(8, 2 * len(df.columns)),
+    )
+
+    for i, column in enumerate(df.columns):
+        ax = axes[i]
+        sm.qqplot(df[column], line="45", ax=ax)
+        ax.set_title(f"QQ Plot - {column}")
+
+    plt.tight_layout()
     plt.show()
