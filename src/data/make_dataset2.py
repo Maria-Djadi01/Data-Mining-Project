@@ -1,10 +1,10 @@
 import sys
 
 # Specify the directory where your data is located
-# project_dir = "D:/2M/D.Mining/Data-Mining-Project/"
+project_dir = "D:/2M/D.Mining/Data-Mining-Project/"
 
 # Change the working directory
-# sys.path.append(project_dir)
+sys.path.append(project_dir)
 
 import pandas as pd
 from src.utils import central_tendances
@@ -82,7 +82,7 @@ df_time_fixed["end date"] = df_time_fixed["end date"].dt.date
 tempo_dataset_df_processed = df_time_fixed
 
 
-# convert zcta to str
+# convert zcta to int
 tempo_dataset_df_processed["zcta"] = tempo_dataset_df_processed["zcta"].astype(int)
 
 tempo_dataset_df_processed.info()

@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import math
@@ -379,3 +380,58 @@ def qq_plot(df):
 
     plt.tight_layout()
     plt.show()
+
+def class_discretization(column):
+    """
+    Discretizes a numerical column into classes with means as labels.
+
+    Args:
+    - column (pandas Series): Numerical column to be discretized.
+
+    Returns:
+    - pd.Series: Discretized column with labels.
+
+    Example:
+    ```python
+    result = class_discretization(data['numeric_column'])
+    ```
+
+    Dependencies: math, pandas
+    """
+    k = int((1 + 10/3) * math.log(len(column), 10))
+    print(f'k = {k}')
+
+    width = (max(column) - min(column)) / k
+
+    bins = [min(column) + i * width for i in range(k+1)]
+    return pd.cut(column, bins, labels=[f'{((bins[i] + bins[i+1]) / 2):.1f}' for i in range(k)])
+
+def equal_frequency_discretization(column, num_classes):
+    # Perform equal-frequency discretization
+    discretized = pd.qcut(column, q=num_classes, labels=False, duplicates='drop')
+
+    # Get the bin edges
+    _, bin_edges = pd.qcut(column, q=num_classes, retbins=True, duplicates='drop')
+
+    # Create custom labels based on the bin edges
+    labels = [f"[{bin_edges[i]:.1f}, {bin_edges[i+1]:.1f}]" for i in range(len(bin_edges)-1)]
+
+    # Assign the custom labels to the discretized column
+    discretized_with_labels = discretized.map(dict(enumerate(labels)))
+
+    return discretized_with_labels
+
+def equal_width_discretization(column, num_classes):
+    # Perform equal-width discretization
+    discretized = pd.cut(column, bins=num_classes, labels=False, duplicates='drop')
+
+    # Get the bin edges
+    _, bin_edges = pd.cut(column, bins=num_classes, retbins=True, duplicates='drop')
+
+    # Create custom labels based on the bin edges
+    labels = [f"[{bin_edges[i]:.1f}, {bin_edges[i+1]:.1f}]" for i in range(len(bin_edges)-1)]
+
+    # Assign the custom labels to the discretized column
+    discretized_with_labels = discretized.map(dict(enumerate(labels)))
+
+    return discretized_with_labels

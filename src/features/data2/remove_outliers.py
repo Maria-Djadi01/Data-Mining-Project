@@ -1,3 +1,11 @@
+import sys
+
+# Specify the directory where your data is located
+project_dir = "D:/2M/D.Mining/Data-Mining-Project/"
+
+# Change the working directory
+sys.path.append(project_dir)
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import math
@@ -6,6 +14,9 @@ import numpy as np
 import warnings
 
 warnings.filterwarnings("ignore")
+plt.style.use("fivethirtyeight")
+plt.rcParams["figure.figsize"] = (20, 5)
+plt.rcParams["figure.dpi"] = 100
 
 # ----------------------------------------------------------------#
 # Load data
@@ -22,18 +33,17 @@ df = pd.read_csv("../../../data/interim/02_temp_dataset_fill_miss_val.csv", inde
 # --------------------------------------------------------------#
 # Plotting outliers
 # --------------------------------------------------------------#
-selected_columns = [
-    col
-    for col in df.columns
-    if col not in ["zcta", "Start date", "end date", "time_period", "population"]
-]
+selected_columns = ['case count', 'test count', 'positive tests']
 df_selected_columns = df[selected_columns]
 for column in df.columns:
-    if column not in ["zcta", "Start date", "end date", "time_period", "population"]:
+    if column in selected_columns:
         df[[column, "zcta"]].boxplot(by="zcta", figsize=(20, 10))
         plt.title(f"Boxplot for {column}")
+        plt.savefig(f"../../visualization/outliers/{column}_boxplot.png")
         plt.show()
 
+row_to_drop = df[df['positive tests'] == 35000]
+df.drop(row_to_drop.index, inplace=True)
 
 def plot_binary_outliers(dataset, col, outlier_col, reset_index):
     """Plot outliers in case of a binary outlier score. Here, the col specifies the real data
@@ -122,68 +132,10 @@ for col in df_selected_columns.columns:
     plot_binary_outliers(dataset, col, col + "_outlier", True)
 
 # --------------------------------------------------------------
-# Chauvenets criteron (distribution based)
-# --------------------------------------------------------------
-
-
-# TODO: Understand the function of chauvenets
-# Insert Chauvenet's function
-def mark_outliers_chauvenet(dataset, col, C=2):
-    """Finds outliers in the specified column of datatable and adds a binary column with
-    the same name extended with '_outlier' that expresses the result per data point.
-
-    Taken from: https://github.com/mhoogen/ML4QS/blob/master/Python3Code/Chapter3/OutlierDetection.py
-
-    Args:
-        dataset (pd.DataFrame): The dataset
-        col (string): The column you want apply outlier detection to
-        C (int, optional): Degree of certainty for the identification of outliers given the assumption
-                           of a normal distribution, typicaly between 1 - 10. Defaults to 2.
-
-    Returns:
-        pd.DataFrame: The original dataframe with an extra boolean column
-        indicating whether the value is an outlier or not.
-    """
-
-    dataset = dataset.copy()
-    # Compute the mean and standard deviation.
-    mean = dataset[col].mean()
-    std = dataset[col].std()
-    N = len(dataset.index)
-    criterion = 1.0 / (C * N)
-
-    # Consider the deviation for the data points.
-    deviation = abs(dataset[col] - mean) / std
-
-    # Express the upper and lower bounds.
-    low = -deviation / math.sqrt(C)
-    high = deviation / math.sqrt(C)
-    prob = []
-    mask = []
-
-    # Pass all rows in the dataset.
-    for i in range(0, len(dataset.index)):
-        # Determine the probability of observing the point
-        prob.append(
-            1.0 - 0.5 * (scipy.special.erf(high[i]) - scipy.special.erf(low[i]))
-        )
-        # And mark as an outlier when the probability is below our criterion.
-        mask.append(prob[i] < criterion)
-    dataset[col + "_outlier"] = mask
-    return dataset
-
-
-# Loop over all columns
-for col in selected_columns:
-    dataset = mark_outliers_chauvenet(df, col)
-    plot_binary_outliers(dataset, col, col + "_outlier", True)
-
-
-# --------------------------------------------------------------
 # Choose method and deal with outliers
 # --------------------------------------------------------------
 # test on a single column
-dataset = mark_outliers_chauvenet(df, "case count")
+dataset = mark_outliers_iqr(df, "case count")
 # number of missing values
 dataset.isnull().sum()
 dataset[dataset["case count" + "_outlier"] == True] = np.nan
@@ -194,17 +146,19 @@ dataset.drop(columns=["case count" + "_outlier"], inplace=True)
 # Create a loop
 dataset = df.copy()
 for col in selected_columns:
-    dataset = mark_outliers_chauvenet(dataset, col)
+    dataset = mark_outliers_iqr(dataset, col)
+    print(f'Number of outliers for {col} is {dataset[dataset[col + "_outlier"] == True][col + "_outlier"].sum()}')
     dataset[dataset[col + "_outlier"] == True] = np.nan
     dataset = dataset.dropna(how="all")
     n_outliers = len(dataset) - len(dataset[col].dropna(how="all"))
     dataset.drop(columns=[col + "_outlier"], inplace=True)
-    print(f"{col} - {n_outliers} outliers removed")
 
 outliers_removed_df = dataset
 # --------------------------------------------------------------
 # Export new dataframe
 # --------------------------------------------------------------
+# convert zcta to int
+outliers_removed_df["zcta"] = outliers_removed_df["zcta"].astype(int)
 outliers_removed_df.to_csv(
     "../../../data/interim/03_temp_dataset_processed_outliers_removed.csv"
 )

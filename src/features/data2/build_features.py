@@ -14,7 +14,7 @@ plt.rcParams["figure.dpi"] = 100
 # ----------------------------------------------------------------#
 
 df = pd.read_csv("../../../data/interim/temp_dataset_processed.csv", index_col=0)
-
+df.info()
 # --------------------------------------------------------------
 # Dealing with missing values (imputation)
 # --------------------------------------------------------------
