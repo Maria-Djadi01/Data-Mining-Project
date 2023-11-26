@@ -6,6 +6,7 @@ import math
 import scipy
 import statsmodels.api as sm
 from scipy import stats
+import math
 
 # --------------------------------------------------------------
 # Central Tendencies (distribution based)
@@ -406,7 +407,9 @@ def class_discretization(column):
     bins = [min(column) + i * width for i in range(k+1)]
     return pd.cut(column, bins, labels=[f'{((bins[i] + bins[i+1]) / 2):.1f}' for i in range(k)])
 
-def equal_frequency_discretization(column, num_classes):
+def equal_frequency_discretization(column):
+    num_classes = int((1 + 10/3) * math.log(len(column), 10))  
+    
     # Perform equal-frequency discretization
     discretized = pd.qcut(column, q=num_classes, labels=False, duplicates='drop')
 
@@ -421,7 +424,8 @@ def equal_frequency_discretization(column, num_classes):
 
     return discretized_with_labels
 
-def equal_width_discretization(column, num_classes):
+def equal_width_discretization(column):
+    num_classes = int((1 + 10/3) * math.log(len(column), 10))
     # Perform equal-width discretization
     discretized = pd.cut(column, bins=num_classes, labels=False, duplicates='drop')
 
