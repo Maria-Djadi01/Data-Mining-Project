@@ -68,6 +68,8 @@ sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm", fmt=".2f", linewidt
 plt.title("Correlation Heatmap")
 plt.show()
 
+df_without_fertility = df_without_fertility.drop(columns=["OC"])
+
 
 # --------------------------------------------------------------
 # Data Normalization
