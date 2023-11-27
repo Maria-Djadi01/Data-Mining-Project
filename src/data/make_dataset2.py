@@ -106,6 +106,7 @@ tempo_dataset_df_processed.drop(["Start date", "end date"], axis=1, inplace=True
 # To improve data readability, we will reorder columns and the rows according
 # to Start date and the state zip code
 column_order = [
+    "time_period",
     "zcta",
     "population",
     "test count",

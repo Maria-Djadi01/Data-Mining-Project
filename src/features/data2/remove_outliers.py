@@ -160,7 +160,7 @@ outliers_removed_df = dataset
 # convert zcta to int
 outliers_removed_df["zcta"] = outliers_removed_df["zcta"].astype(int)
 outliers_removed_df.to_csv(
-    "../../../data/interim/03_temp_dataset_processed_outliers_removed.csv"
+    "../../../data/processed/03_temp_dataset_processed_outliers_removed.csv"
 )
 
 outliers_removed_df.info()
