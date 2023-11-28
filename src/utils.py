@@ -417,7 +417,8 @@ def equal_frequency_discretization(column):
     _, bin_edges = pd.qcut(column, q=num_classes, retbins=True, duplicates='drop')
 
     # Create custom labels based on the bin edges
-    labels = [f"[{bin_edges[i]:.1f}, {bin_edges[i+1]:.1f}]" for i in range(len(bin_edges)-1)]
+    labels = [f"{column.name}_class_{i}" for i in range(len(bin_edges)-1)]
+    # labels = [f"[{bin_edges[i]:.1f}, {bin_edges[i+1]:.1f}]" for i in range(len(bin_edges)-1)]
 
     # Assign the custom labels to the discretized column
     discretized_with_labels = discretized.map(dict(enumerate(labels)))
@@ -433,7 +434,8 @@ def equal_width_discretization(column):
     _, bin_edges = pd.cut(column, bins=num_classes, retbins=True, duplicates='drop')
 
     # Create custom labels based on the bin edges
-    labels = [f"[{bin_edges[i]:.1f}, {bin_edges[i+1]:.1f}]" for i in range(len(bin_edges)-1)]
+    labels = [f"{column.name}_class_{i}" for i in range(len(bin_edges)-1)]
+    # labels = [f"[{bin_edges[i]:.1f}, {bin_edges[i+1]:.1f}]" for i in range(len(bin_edges)-1)]
 
     # Assign the custom labels to the discretized column
     discretized_with_labels = discretized.map(dict(enumerate(labels)))
