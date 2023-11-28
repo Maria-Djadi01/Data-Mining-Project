@@ -3,9 +3,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import math
 import scipy
+import sys
 
+# Change the working directory
+sys.path.append("../../../../Data-Mining-Project")
 
-from src.utils import mark_outliers_chauvenet, mark_outliers_iqr, plot_binary_outliers
+from src.utils import mark_outliers_iqr, plot_binary_outliers, calculate_quartiles
 
 # ----------------------------------------------------------------
 # Load data
@@ -35,40 +38,32 @@ for col in outlier_columns:
     dataset = mark_outliers_iqr(df, col)
     plot_binary_outliers(dataset, col, col + "_outlier", True)
 
-
-# --------------------------------------------------------------
-# Chauvenets criteron (distribution based)
-# --------------------------------------------------------------
-
-# Loop over all columns
-for col in outlier_columns:
-    dataset = mark_outliers_chauvenet(df, col)
-    plot_binary_outliers(dataset, col, col + "_outlier", True)
-
-
 # --------------------------------------------------------------
 # Choose method and deal with outliers
 # --------------------------------------------------------------
 
-# Chauvenets criteron
 # test on a single column
-dataset = mark_outliers_chauvenet(df, "P")
-# number of missing values
-dataset.isnull().sum()
-dataset[dataset["P" + "_outlier"] == True] = np.nan
-# drop the null raws
-dataset = dataset.dropna(how="all")
-dataset.drop(columns=["P" + "_outlier"], inplace=True)
+dataset = mark_outliers_iqr(df, "P")
+Min, Q1, Q2, Q3, Max = calculate_quartiles(dataset["P"])
+IQR = Q3 - Q1
+if (dataset["P_outlier"] == True).any():
+    lower_fence = Q1 - 1.5 * IQR
+    upper_fence = Q3 + 1.5 * IQR
+    dataset["P"] = dataset["P"].clip(lower=lower_fence, upper=upper_fence)
+dataset.iloc[279]
+
 
 # Create a loop
 dataset = df.copy()
 for col in outlier_columns:
-    dataset = mark_outliers_chauvenet(dataset, col)
-    dataset[dataset[col + "_outlier"] == True] = np.nan
-    dataset = dataset.dropna(how="all")
-    n_outliers = len(dataset) - len(dataset[col].dropna(how="all"))
-    dataset.drop(columns=[col + "_outlier"], inplace=True)
-    print(f"{col} - {n_outliers} outliers removed")
+    dataset = mark_outliers_iqr(dataset, col)
+    Min, Q1, Q2, Q3, Max = calculate_quartiles(dataset[col])
+    IQR = Q3 - Q1
+    if (dataset[col + "_outlier"] == True).any():
+        lower_fence = Q1 - 1.5 * IQR
+        upper_fence = Q3 + 1.5 * IQR
+        dataset[col] = dataset[col].clip(lower=lower_fence, upper=upper_fence)
+        dataset.drop(columns=[col + "_outlier"], inplace=True)
 
 outliers_removed_df = dataset
 

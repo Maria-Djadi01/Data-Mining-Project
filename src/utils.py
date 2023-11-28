@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import math
 import scipy
-import statsmodels.api as sm
+
+# import statsmodels.api as sm
 from scipy import stats
 import math
 
@@ -107,57 +108,6 @@ def calculate_quartiles(column):
         Q2 = sorted_column[Q2_index]
         Q3 = sorted_column[Q3_index]
     return (min(sorted_column), Q1, Q2, Q3, max(sorted_column))
-
-
-# --------------------------------------------------------------
-# Chauvenets criteron (distribution based)
-# --------------------------------------------------------------
-
-
-# TODO: Understand the function of chauvenets criterion
-def mark_outliers_chauvenet(dataset, col, C=2):
-    """Finds outliers in the specified column of datatable and adds a binary column with
-    the same name extended with '_outlier' that expresses the result per data point.
-
-    Taken from: https://github.com/mhoogen/ML4QS/blob/master/Python3Code/Chapter3/OutlierDetection.py
-
-    Args:
-        dataset (pd.DataFrame): The dataset
-        col (string): The column you want apply outlier detection to
-        C (int, optional): Degree of certainty for the identification of outliers given the assumption
-                           of a normal distribution, typicaly between 1 - 10. Defaults to 2.
-
-    Returns:
-        pd.DataFrame: The original dataframe with an extra boolean column
-        indicating whether the value is an outlier or not.
-    """
-
-    dataset = dataset.copy()
-    # Compute the mean and standard deviation.
-    mean = dataset[col].mean()
-    std = dataset[col].std()
-    N = len(dataset.index)
-    criterion = 1.0 / (C * N)
-
-    # Consider the deviation for the data points.
-    deviation = abs(dataset[col] - mean) / std
-
-    # Express the upper and lower bounds.
-    low = -deviation / math.sqrt(C)
-    high = deviation / math.sqrt(C)
-    prob = []
-    mask = []
-
-    # Pass all rows in the dataset.
-    for i, (index, row) in enumerate(dataset.iterrows()):
-        # Determine the probability of observing the point
-        prob.append(
-            1.0 - 0.5 * (scipy.special.erf(high[index]) - scipy.special.erf(low[index]))
-        )
-        # And mark as an outlier when the probability is below our criterion.
-        mask.append(prob[i] < criterion)
-    dataset[col + "_outlier"] = mask
-    return dataset
 
 
 # --------------------------------------------------------------
@@ -306,8 +256,7 @@ def mark_outliers_iqr(dataset, col):
 
     dataset = dataset.copy()
 
-    Q1 = dataset[col].quantile(0.25)
-    Q3 = dataset[col].quantile(0.75)
+    Min, Q1, Q2, Q3, Max = calculate_quartiles(dataset[col])
     IQR = Q3 - Q1
 
     lower_fence = Q1 - 1.5 * IQR
@@ -330,8 +279,6 @@ def plot_binary_outliers(dataset, col, outlier_col, reset_index):
         outlier_col (string): Outlier column marked with true/false
         reset_index (bool): whether to reset the index for plotting
     """
-
-    # Taken from: https://github.com/mhoogen/ML4QS/blob/master/Python3Code/util/VisualizeDataset.py
 
     dataset = dataset.dropna(axis=0, subset=[col, outlier_col])
     dataset[outlier_col] = dataset[outlier_col].astype("bool")
@@ -368,19 +315,20 @@ def plot_binary_outliers(dataset, col, outlier_col, reset_index):
 
 
 # Q-Q Plot
-def qq_plot(df):
-    fig, axes = plt.subplots(
-        nrows=len(df.columns),
-        figsize=(8, 2 * len(df.columns)),
-    )
+# def qq_plot(df):
+#     fig, axes = plt.subplots(
+#         nrows=len(df.columns),
+#         figsize=(8, 2 * len(df.columns)),
+#     )
 
-    for i, column in enumerate(df.columns):
-        ax = axes[i]
-        sm.qqplot(df[column], line="45", ax=ax)
-        ax.set_title(f"QQ Plot - {column}")
+#     for i, column in enumerate(df.columns):
+#         ax = axes[i]
+#         sm.qqplot(df[column], line="45", ax=ax)
+#         ax.set_title(f"QQ Plot - {column}")
 
-    plt.tight_layout()
-    plt.show()
+#     plt.tight_layout()
+#     plt.show()
+
 
 def class_discretization(column):
     """
@@ -399,22 +347,25 @@ def class_discretization(column):
 
     Dependencies: math, pandas
     """
-    k = int((1 + 10/3) * math.log(len(column), 10))
-    print(f'k = {k}')
+    k = int((1 + 10 / 3) * math.log(len(column), 10))
+    print(f"k = {k}")
 
     width = (max(column) - min(column)) / k
 
-    bins = [min(column) + i * width for i in range(k+1)]
-    return pd.cut(column, bins, labels=[f'{((bins[i] + bins[i+1]) / 2):.1f}' for i in range(k)])
+    bins = [min(column) + i * width for i in range(k + 1)]
+    return pd.cut(
+        column, bins, labels=[f"{((bins[i] + bins[i+1]) / 2):.1f}" for i in range(k)]
+    )
+
 
 def equal_frequency_discretization(column):
-    num_classes = int((1 + 10/3) * math.log(len(column), 10))  
-    
+    num_classes = int((1 + 10 / 3) * math.log(len(column), 10))
+
     # Perform equal-frequency discretization
-    discretized = pd.qcut(column, q=num_classes, labels=False, duplicates='drop')
+    discretized = pd.qcut(column, q=num_classes, labels=False, duplicates="drop")
 
     # Get the bin edges
-    _, bin_edges = pd.qcut(column, q=num_classes, retbins=True, duplicates='drop')
+    _, bin_edges = pd.qcut(column, q=num_classes, retbins=True, duplicates="drop")
 
     # Create custom labels based on the bin edges
     labels = [f"{column.name}_class_{i}" for i in range(len(bin_edges)-1)]
@@ -425,13 +376,14 @@ def equal_frequency_discretization(column):
 
     return discretized_with_labels
 
+
 def equal_width_discretization(column):
-    num_classes = int((1 + 10/3) * math.log(len(column), 10))
+    num_classes = int((1 + 10 / 3) * math.log(len(column), 10))
     # Perform equal-width discretization
-    discretized = pd.cut(column, bins=num_classes, labels=False, duplicates='drop')
+    discretized = pd.cut(column, bins=num_classes, labels=False, duplicates="drop")
 
     # Get the bin edges
-    _, bin_edges = pd.cut(column, bins=num_classes, retbins=True, duplicates='drop')
+    _, bin_edges = pd.cut(column, bins=num_classes, retbins=True, duplicates="drop")
 
     # Create custom labels based on the bin edges
     labels = [f"{column.name}_class_{i}" for i in range(len(bin_edges)-1)]

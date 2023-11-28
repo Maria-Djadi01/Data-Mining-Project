@@ -3,12 +3,15 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
 from scipy import stats
-
 import sys
+import seaborn as sns
 
-sys.path.append("../../../src/utils")
+sys.path.append("../../../../Data-Mining-Project")
 
-from src.utils import qq_plot
+from src.utils import correlation_plots
+
+
+# from src.utils import qq_plot
 
 # --------------------------------------------------------------
 # Load data
@@ -56,19 +59,42 @@ for col in selected_columns:
 df = df.drop_duplicates()
 
 
-# Removal of Vertical Redundancies
-# Drop columns with constant values
-df = df.loc[:, (df != df.iloc[0]).any()]
-
-
 # Removal of Correlated Attributes
+df_without_fertility = df.drop(columns=["Fertility"])
+correlation_matrix = df_without_fertility.corr()
+plt.figure(figsize=(10, 8))
+sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm", fmt=".2f", linewidths=0.5)
+
+plt.title("Correlation Heatmap")
+plt.show()
+
+df_without_fertility = df_without_fertility.drop(columns=["OC"])
 
 
 # --------------------------------------------------------------
 # Data Normalization
 # --------------------------------------------------------------
+def qq_plot(df):
+    num_cols = len(df.columns)
+    num_rows = int(
+        np.ceil(num_cols / 3)
+    )  # Adjust the number of columns per row as needed
 
-df_without_fertility = df.drop(columns=["Fertility"])
+    # Create a grid of subplots
+    fig, axes = plt.subplots(nrows=num_rows, ncols=3, figsize=(15, 3 * num_rows))
+    fig.suptitle("QQ Plots for Columns ", y=1.02)
+
+    # Iterate over each pair of columns and create QQ plots
+    for i, (col1, col2) in enumerate(zip(df.columns[:-1:2], df.columns[1::2])):
+        ax = axes[i // 3, i % 3]
+        sm.qqplot_2samples(df[col1], df[col2], ax=ax, line="45")
+        ax.set_title(f"QQ Plot - {col1} vs {col2}")
+
+    # Adjust layout
+    plt.tight_layout()
+    plt.show()
+
+
 # Min-Max Normalization
 
 minMax_df = (df_without_fertility - df_without_fertility.min()) / (
