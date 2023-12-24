@@ -4,11 +4,17 @@ import matplotlib.pyplot as plt
 import math
 import scipy
 import sys
+import seaborn as sns
 
 # Change the working directory
 sys.path.append("../../../../Data-Mining-Project")
 
-from src.utils import mark_outliers_iqr, plot_binary_outliers, calculate_quartiles
+from src.utils import (
+    mark_outliers_iqr,
+    plot_binary_outliers,
+    calculate_quartiles,
+    box_plot,
+)
 
 # ----------------------------------------------------------------
 # Load data
@@ -67,6 +73,22 @@ for col in outlier_columns:
 
 outliers_removed_df = dataset
 
+# fig, axes = plt.subplots(nrows=4, ncols=4, figsize=(16, 16))
+# fig.suptitle("Fertility vs. Other Variables", y=1.02)
+
+# for i, column in enumerate(outlier_columns):
+#     sns.boxplot(
+#         x="Fertility", y=column, data=outliers_removed_df, ax=axes[i // 4, i % 4]
+#     )
+
+# plt.tight_layout()
+# plt.show()
+
+for col in outlier_columns:
+    dataset = mark_outliers_iqr(outliers_removed_df, col)
+    plot_binary_outliers(dataset, col, col + "_outlier", True)
+
+box_plot(outliers_removed_df)
 
 # --------------------------------------------------------------
 # Export new dataframe

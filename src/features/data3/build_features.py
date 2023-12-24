@@ -48,9 +48,9 @@ for col in cols:
     df_disc[col + "_width_disc"] = equal_width_discretization(df[col])
 
 
-# ---------------------------------------------------------------- #
+# ----------------------------------------------------------------
 # Compare the distribution of the original and discretized data
-# ---------------------------------------------------------------- #
+# ----------------------------------------------------------------
 # Set up the figure and axis
 fig, axes = plt.subplots(3, 2, figsize=(15, 15))
 plt.subplots_adjust(
