@@ -20,4 +20,4 @@ class RandomForest:
 
     def predict(self, X):
         predictions = np.array([tree.predict(X) for tree in self.trees])
-        return np.mean(predictions, axis=0).round()
+        return np.mean(predictions, axis=0).round().astype(int)

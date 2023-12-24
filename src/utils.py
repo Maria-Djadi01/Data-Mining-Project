@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import math
-import scipy
+from sklearn.model_selection import train_test_split
 
 # import statsmodels.api as sm
 from scipy import stats
@@ -525,4 +525,117 @@ def minConf_plot(experiment_results, min_supp_range, min_conf_range):
 
     # Show the plot
     plt.tight_layout()
+    plt.show()
+
+
+# --------------------------------------------------------------
+# Split Data
+# --------------------------------------------------------------
+
+
+def split_data(df):
+    """
+    Split a DataFrame into training and test sets.
+
+    Parameters:
+    - df (DataFrame): The input DataFrame.
+    - test_size (float): The proportion of the dataset to include in the test split.
+
+    Returns:
+    - train_df (DataFrame): The training set.
+    - test_df (DataFrame): The test set.
+
+    This function splits a DataFrame into training and test sets using the specified test size. The default test size is 0.2 (20% of the dataset).
+
+    Example:
+    >>> import pandas as pd
+    >>> # Assuming your DataFrame is named 'df'
+    >>> train_df, test_df = split_data(df)
+    """
+    X = df.drop(columns=["Fertility"]).values
+    y = df["Fertility"].values
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=40
+    )
+    return X_train, X_test, y_train, y_test
+
+
+# ----------------------------------------------------------------#
+# Metrics
+# ----------------------------------------------------------------#
+
+
+# Confusion Matrix
+def confusion_matrix(y_true, y_pred):
+    unique_classes = np.unique(y_true)
+    n_classes = len(unique_classes)
+    matrix = np.zeros((n_classes, n_classes))
+    for true, pred in zip(y_true, y_pred):
+        matrix[true, pred] += 1
+    return matrix
+
+
+# Accuracy
+def accuracy(y_true, y_pred):
+    cm = confusion_matrix(y_true, y_pred)
+    return np.sum(np.diag(cm)) / np.sum(cm)
+
+
+# Recall
+def recall(y_true, y_pred):
+    cm = confusion_matrix(y_true, y_pred)
+    return np.diag(cm) / np.sum(cm, axis=1)
+
+
+def precision(y_true, y_pred):
+    cm = confusion_matrix(y_true, y_pred)
+    return np.diag(cm) / np.sum(cm, axis=0)
+
+
+# f1_score
+def f1_score(y_true, y_pred):
+    cm = confusion_matrix(y_true, y_pred)
+    fp = np.sum(cm, axis=0) - np.diag(cm)
+    tn = np.sum(cm) - (np.sum(cm, axis=0) + np.sum(cm, axis=1) - np.diag(cm))
+
+    return fp / (fp + tn)
+
+
+def specifity(f1_score):
+    return 1 - f1_score
+
+
+def compute_metrics(y_test, y_pred):
+    conf_mat = confusion_matrix(y_test, y_pred)
+    acc = accuracy(y_test, y_pred)
+    rec = recall(y_test, y_pred)
+    prec = precision(y_test, y_pred)
+    fpr = f1_score(y_test, y_pred)
+    spe = specifity(fpr)
+    print("Confusion Matrix: \n", conf_mat)
+    print("Accuracy: ", acc.mean())
+    print("Recall: ", rec.mean())
+    print("Precision: ", prec.mean())
+    print("F1 score: ", fpr.mean())
+    print("Specifity: ", spe.mean())
+
+
+# ----------------------------------------------------------------#
+# Plot Confusion Matrix
+# ----------------------------------------------------------------#
+
+
+def plot_confusion_matrix(conf_mat):
+    fig, axes = plt.subplots(1, 2, sharex=True, figsize=(10, 4))
+    fig.suptitle("Confusion matrix", c="b")
+    sns.heatmap(
+        conf_mat / np.sum(conf_mat), ax=axes[0], annot=True, fmt=".2%", cmap="Blues"
+    )
+    axes[0].set_xlabel("Predicted labels")
+    axes[0].set_ylabel("Actual labels")
+
+    sns.heatmap(conf_mat, ax=axes[1], annot=True, cmap="Blues", fmt="")
+    axes[1].set_xlabel("Predicted labels")
+    axes[1].set_ylabel("Actual labels")
     plt.show()
