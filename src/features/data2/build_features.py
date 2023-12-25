@@ -45,7 +45,7 @@ for row in df_fill_positive_tests[
     ).astype(int)
 df_fill_positive_tests["positive tests"].isnull().sum()
 
-# We can fill the case count by looking at the case count and population
+# We can fill the case count by looking at the case rate and population
 df_fill_case_count = df_fill_positive_tests.copy()
 for row in df_fill_case_count[df_fill_case_count["case count"].isnull()].index:
     df_fill_case_count.loc[row, "case count"] = (

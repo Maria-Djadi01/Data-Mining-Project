@@ -56,8 +56,6 @@ def plot_binary_outliers(dataset, col, outlier_col, reset_index):
         reset_index (bool): whether to reset the index for plotting
     """
 
-    # Taken from: https://github.com/mhoogen/ML4QS/blob/master/Python3Code/util/VisualizeDataset.py
-
     dataset = dataset.dropna(axis=0, subset=[col, outlier_col])
     dataset[outlier_col] = dataset[outlier_col].astype("bool")
 
@@ -154,6 +152,7 @@ for col in selected_columns:
     dataset.drop(columns=[col + "_outlier"], inplace=True)
 
 outliers_removed_df = dataset
+
 # --------------------------------------------------------------
 # Export new dataframe
 # --------------------------------------------------------------
