@@ -1,6 +1,6 @@
 import pandas as pd
-from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
+from imblearn.under_sampling import RandomUnderSampler
 import sys
 
 sys.path.insert(0, "../../../Data-Mining-Project")
@@ -18,6 +18,14 @@ df = pd.read_csv("../../data/interim/03_static_dataset_features_built.csv", inde
 # ----------------------------------------------------------------#
 
 X_train, X_test, y_train, y_test = split_data(df)
+
+# ----------------------------------------------------------------#
+# Undersampling
+# ----------------------------------------------------------------#
+
+undersample = RandomUnderSampler(sampling_strategy=0.5)
+X_resampled, y_resampled = undersample.fit_resample(X_train, y_train)
+
 
 # ----------------------------------------------------------------#
 # Our KNN

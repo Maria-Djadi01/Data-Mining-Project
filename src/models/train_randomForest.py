@@ -39,31 +39,30 @@ cm = confusion_matrix(y_test, y_pred)
 
 plot_confusion_matrix(cm)
 
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
+
+# def plot_roc_curve(classifier, X_test, Y_test):
+#     # Get predicted probabilities for the positive class
+#     y_pred_proba = classifier.predict_proba(X_test[:, 1])
+
+#     # Compute ROC curve
+#     fpr, tpr, thresholds = roc_curve(Y_test, y_pred_proba)
+#     roc_auc = auc(fpr, tpr)
+
+#     # Plot ROC curve
+#     plt.figure(figsize=(5, 4))
+#     plt.plot(fpr, tpr, label="ROC curve (area = %0.2f)" % roc_auc)
+#     plt.plot([0, 1], [0, 1], "k--")  # Plot the diagonal line
+#     plt.xlim([0.0, 1.0])
+#     plt.ylim([0.0, 1.05])
+#     plt.xlabel("False Positive Rate (FPR)")
+#     plt.ylabel("True Positive Rate (TPR)")
+#     plt.title("Receiver Operating Characteristic (ROC) Curve")
+#     plt.legend(loc="lower right")
+#     plt.show()
 
 
-def plot_roc_curve(classifier, X_test, Y_test):
-    # Get predicted probabilities for the positive class
-    y_pred_proba = classifier.predict_proba(X_test)[:, 1]
-
-    # Compute ROC curve
-    fpr, tpr, thresholds = roc_curve(Y_test, y_pred_proba)
-    roc_auc = auc(fpr, tpr)
-
-    # Plot ROC curve
-    plt.figure(figsize=(5, 4))
-    plt.plot(fpr, tpr, label="ROC curve (area = %0.2f)" % roc_auc)
-    plt.plot([0, 1], [0, 1], "k--")  # Plot the diagonal line
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel("False Positive Rate (FPR)")
-    plt.ylabel("True Positive Rate (TPR)")
-    plt.title("Receiver Operating Characteristic (ROC) Curve")
-    plt.legend(loc="lower right")
-    plt.show()
-
-
-plot_roc_curve(forest, X_test, y_test)
+# plot_roc_curve(forest, X_test, y_test)
 
 # ----------------------------------------------------------------#
 # SKLearn Random Forest

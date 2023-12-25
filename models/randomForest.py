@@ -21,3 +21,7 @@ class RandomForest:
     def predict(self, X):
         predictions = np.array([tree.predict(X) for tree in self.trees])
         return np.mean(predictions, axis=0).round().astype(int)
+
+    # def predict_proba(self, X):
+    #     predictions = np.array([tree.predict_proba(X) for tree in self.trees])
+    #     return np.mean(predictions, axis=0)

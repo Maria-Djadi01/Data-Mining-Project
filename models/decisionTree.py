@@ -91,3 +91,15 @@ class DecisionTree:
                 return self.traverse_tree(x, node.left)
             else:
                 return self.traverse_tree(x, node.right)
+
+    # def predict_proba(self, X):
+    #     return [self.traverse_tree_proba(x, self.tree) for x in X]
+
+    # def traverse_tree_proba(self, x, node):
+    #     if node.value != None:
+    #         return node.value
+    #     else:
+    #         if x[node.feature] <= node.threshold:
+    #             return self.traverse_tree_proba(x, node.left)
+    #         else:
+    #             return self.traverse_tree_proba(x, node.right)
