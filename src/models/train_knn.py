@@ -5,9 +5,10 @@ from sklearn.metrics import confusion_matrix, roc_curve, auc
 import time
 import sys
 
-sys.path.insert(0, "../../../Data-Mining-Project")
+# sys.path.insert(0, "../../../Data-Mining-Project")
+sys.path.insert(0, "D:\\2M\D.Mining\Data-Mining-Project")
 # from models.knn import KNNClassifier
-from src.models.KNN import KNN
+from models.KNN import KNN
 from src.utils import split_data, compute_metrics, plot_confusion_matrix
 
 # ----------------------------------------------------------------#
@@ -19,7 +20,6 @@ df = pd.read_csv("../../data/interim/03_static_dataset_features_built.csv", inde
 # ----------------------------------------------------------------#
 # Split Data
 # ----------------------------------------------------------------#
-
 X_train, X_test, y_train, y_test = split_data(df)
 X_train.shape, y_train.shape
 # ----------------------------------------------------------------#
@@ -43,10 +43,9 @@ X_resampled.shape, y_resampled.shape
 # ----------------------------------------------------------------#
 # Our KNN
 # ----------------------------------------------------------------#
-
-knn_3 = KNN(k=20)
+print("Our KNN with k = 5")
+knn_3 = KNN(k=5)
 # knn_3 = KNNClassifier(k=3, distance_metric="euclidean")
-
 
 start_time = time.time()
 knn_3.fit(X_resampled, y_resampled)
@@ -61,24 +60,12 @@ print("Execution Time: ", RF_exec_time)
 cm = confusion_matrix(y_test, y_pred)
 
 plot_confusion_matrix(cm)
-
-
-result_k3 = knn_3.predict(X_test)
-
-# KNN avec k=5 et distance euclidienne
-knn_5 = KNN(k=5, distance_metric="euclidean")
-
-# Prédiction de la classe
-result_k5 = knn_5.predict(X_test, df)
-
-print("Prédiction avec K=3:", result_k3)
-print("Prédiction avec K=5:", result_k5)
-
 # ----------------------------------------------------------------#
 # SKLearn KNN
 # ----------------------------------------------------------------#
-SKforest = RandomForestClassifier()
-
-SKforest.fit(X_train, y_train)
-y_pred = SKforest.predict(X_test)
-print("SK_Accuracy:", (y_pred == y_test).mean())
+print("SKLearn KNN with k = 5")
+from sklearn.neighbors import KNeighborsClassifier
+knn_sklearn = KNeighborsClassifier(n_neighbors=5)
+knn_sklearn.fit(X_train, y_train)   
+y_pred_sklearn = knn_sklearn.predict(X_test)
+compute_metrics(y_test, y_pred_sklearn)

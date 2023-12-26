@@ -1,82 +1,70 @@
 import numpy as np
-import pandas as pd
 
 
-class KNNClassifier:
-    def __init__(self, k, distance_metric="euclidean"):
+class KNN:
+    def __init__(self, k=5):
         self.k = k
-        self.distance_metric = distance_metric
+        self.X = None
+        self.y = None
+        self.n_samples = None
+        self.n_features = None
+        self.n_classes = None
+        self.distances = None
+        self.k_nearest_neighbors = None
+        self.predictions = None
 
-    def calculate_distance(self, instance1, instance2):
-        instance1 = np.array(instance1)
-        instance2 = np.array(instance2)
+    def fit(self, X, y):
+        self.X = X
+        self.y = y
+        self.n_samples, self.n_features = X.shape
+        self.n_classes = len(np.unique(y))
 
-        if self.distance_metric == "manhattan":
-            return np.sum(np.abs(instance1 - instance2))
-        elif self.distance_metric == "euclidean":
-            return np.sqrt(np.sum((instance1 - instance2) ** 2))
-        elif self.distance_metric == "minkowski":
-            p = 3
-            return np.power(np.sum(np.power(np.abs(instance1 - instance2), p)), 1 / p)
-        elif self.distance_metric == "cosine":
-            dot_product = np.dot(instance1, instance2)
-            norm_instance1 = np.linalg.norm(instance1)
-            norm_instance2 = np.linalg.norm(instance2)
-            return 1 - (dot_product / (norm_instance1 * norm_instance2))
-        elif self.distance_metric == "hamming":
-            return np.sum(instance1 != instance2) / len(instance1)
-        else:
-            raise ValueError("Invalid distance metric")
+    def predict(self, X):
+        self.distances = self._get_distances(X)
+        self.k_nearest_neighbors = self._get_k_nearest_neighbors()
+        self.predictions = self._get_predictions()
+        return self.predictions.astype(int)
 
-    def sort_instances_by_distance(self, test_instance, dataset):
-        distances = [
-            (self.calculate_distance(test_instance, row[:]), row["label"])
-            for _, row in dataset.iterrows()
-        ]
-        distances.sort(key=lambda x: x[0])
+    def _get_distances(self, X):
+        distances = np.zeros((len(X), self.n_samples))
+        for i, sample in enumerate(X):
+            for j, x in enumerate(self.X):
+                distances[i][j] = self._euclidean_distance(sample, x)
         return distances
 
-    def get_majority_class(self, distances):
-        k_nearest = distances[: self.k]
-        classes = [cls for (_, cls) in k_nearest]
-        unique_classes, counts = np.unique(classes, return_counts=True)
-        index = np.argmax(counts)
-        return unique_classes[index]
+    def _get_k_nearest_neighbors(self):
+        k_nearest_neighbors = np.zeros((len(self.distances), self.k))
+        for i, distance in enumerate(self.distances):
+            k_nearest_neighbors[i] = np.argsort(distance)[: self.k]
+        return k_nearest_neighbors
 
-    def predict(self, test_instance, dataset):
-        sorted_distances = self.sort_instances_by_distance(test_instance, dataset)
-        predicted_class = self.get_majority_class(sorted_distances)
-        return predicted_class
+    def _get_predictions(self):
+        predictions = np.zeros(len(self.k_nearest_neighbors))
+        for i, k_nearest_neighbors in enumerate(self.k_nearest_neighbors):
+            k_nearest_neighbors = self.y[k_nearest_neighbors.astype(int)]
+            predictions[i] = np.argmax(np.bincount(k_nearest_neighbors.astype(int)))
+        return predictions
+
+    def _euclidean_distance(self, x1, x2):
+        return np.sqrt(np.sum((x1 - x2) ** 2))
+
+    def _manhattan_distance(self, x1, x2):
+        return np.sum(np.abs(x1 - x2))
+
+    def _minkowski_distance(self, x1, x2):
+        return self._minowski_distance(x1, x2) ** 3
 
 
-# import numpy as np
-# import pandas as pd
-# from collections import Counter
+# if __name__ == "__main__":
+#     # Test the KNN class
+#     from sklearn import datasets
+#     from sklearn.model_selection import train_test_split
+#     from sklearn.metrics import accuracy_score
 
+#     X, y = datasets.make_classification(n_samples=1000, n_features=10, n_classes=2, random_state=123)
+#     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=123)
 
-# class KNNClassifier:
-#     def __init__(self, k=3, distance_metric="euclidean"):
-#         self.k = k
-#         self.distance_metric = distance_metric
-
-#     def calculate_distance(self, instance1, instance2):
-#         instance1 = np.array(instance1)
-#         instance2 = np.array(instance2)
-
-#         if self.distance_metric == "euclidean":
-#             return np.sqrt(np.sum((instance1 - instance2) ** 2))
-#         elif self.distance_metric == "manhattan":
-#             return np.sum(np.abs(instance1 - instance2))
-#         else:
-#             raise ValueError("Invalid distance metric")
-
-#     def predict(self, test_instance, dataset):
-#         distances = [
-#             (self.calculate_distance(test_instance, row[:-1]), row["label"])
-#             for _, row in dataset.iterrows()
-#         ]
-#         distances.sort(key=lambda x: x[0])
-#         k_nearest = distances[: self.k]
-#         classes = [cls for (_, cls) in k_nearest]
-#         majority_class = Counter(classes).most_common(1)[0][0]
-#         return majority_class
+#     clf = KNN(k=5)
+#     clf.fit(X_train, y_train)
+#     predictions = clf.predict(X_test)
+#     print("Accuracy:", accuracy_score(y_test, predictions))
