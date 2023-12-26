@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import math
-import scipy
+from sklearn.model_selection import train_test_split
 
 # import statsmodels.api as sm
 from scipy import stats
@@ -269,6 +269,11 @@ def mark_outliers_iqr(dataset, col):
     return dataset
 
 
+# --------------------------------------------------------------
+# Marking Outliers
+# --------------------------------------------------------------
+
+
 def plot_binary_outliers(dataset, col, outlier_col, reset_index):
     """Plot outliers in case of a binary outlier score. Here, the col specifies the real data
     column and outlier_col the columns with a binary value (outlier or not).
@@ -314,20 +319,42 @@ def plot_binary_outliers(dataset, col, outlier_col, reset_index):
     plt.show()
 
 
-# Q-Q Plot
-# def qq_plot(df):
-#     fig, axes = plt.subplots(
-#         nrows=len(df.columns),
-#         figsize=(8, 2 * len(df.columns)),
-#     )
+# --------------------------------------------------------------
+# Central Distribution Plots
+# --------------------------------------------------------------
+def plot_distribution(df):
+    """
+    Generate distribution plots for all columns in a DataFrame.
 
-#     for i, column in enumerate(df.columns):
-#         ax = axes[i]
-#         sm.qqplot(df[column], line="45", ax=ax)
-#         ax.set_title(f"QQ Plot - {column}")
+    Parameters:
+    - df (DataFrame): The input DataFrame.
 
-#     plt.tight_layout()
-#     plt.show()
+    This function creates distribution plots using Seaborn for all columns in the DataFrame.
+    """
+    # Set the style
+    sns.set(style="whitegrid")
+
+    # Determine the number of rows and columns for subplots
+    num_rows = len(df.columns) // 4
+    num_cols = min(4, len(df.columns))
+
+    # Create subplots
+    fig, axs = plt.subplots(nrows=num_rows, ncols=num_cols, figsize=(16, 4 * num_rows))
+
+    # Plot distribution plots
+    for i, column in enumerate(df.columns):
+        ax = axs[i // num_cols, i % num_cols]
+        sns.histplot(data=df, x=column, ax=ax, kde=True)
+        ax.set_title(f"Distribution of {column}")
+
+    # Adjust layout
+    plt.tight_layout()
+    plt.show()
+
+
+# --------------------------------------------------------------
+# Class Discretization
+# --------------------------------------------------------------
 
 
 def class_discretization(column):
@@ -358,6 +385,11 @@ def class_discretization(column):
     )
 
 
+# --------------------------------------------------------------
+# Equal-Frequency Discretization
+# --------------------------------------------------------------
+
+
 def equal_frequency_discretization(column):
     num_classes = int((1 + 10 / 3) * math.log(len(column), 10))
 
@@ -368,13 +400,21 @@ def equal_frequency_discretization(column):
     _, bin_edges = pd.qcut(column, q=num_classes, retbins=True, duplicates="drop")
 
     # Create custom labels based on the bin edges
-    labels = [f"{column.name}_class_{i}" for i in range(len(bin_edges)-1)]
-    # labels = [f"[{bin_edges[i]:.1f}, {bin_edges[i+1]:.1f}]" for i in range(len(bin_edges)-1)]
+    # labels = [f"{column.name}_class_{i}" for i in range(len(bin_edges) - 1)]
+    labels = [
+        f"{column.name} [{bin_edges[i]:.1f}, {bin_edges[i+1]:.1f}]"
+        for i in range(len(bin_edges) - 1)
+    ]
 
     # Assign the custom labels to the discretized column
     discretized_with_labels = discretized.map(dict(enumerate(labels)))
 
     return discretized_with_labels
+
+
+# --------------------------------------------------------------
+# Equal-Width Discretization
+# --------------------------------------------------------------
 
 
 def equal_width_discretization(column):
@@ -386,10 +426,216 @@ def equal_width_discretization(column):
     _, bin_edges = pd.cut(column, bins=num_classes, retbins=True, duplicates="drop")
 
     # Create custom labels based on the bin edges
-    labels = [f"{column.name}_class_{i}" for i in range(len(bin_edges)-1)]
-    # labels = [f"[{bin_edges[i]:.1f}, {bin_edges[i+1]:.1f}]" for i in range(len(bin_edges)-1)]
+    # labels = [f"{column.name}_class_{i}" for i in range(len(bin_edges) - 1)]
+    labels = [
+        f"{column.name} [{bin_edges[i]:.1f}, {bin_edges[i+1]:.1f}]"
+        for i in range(len(bin_edges) - 1)
+    ]
 
     # Assign the custom labels to the discretized column
     discretized_with_labels = discretized.map(dict(enumerate(labels)))
 
     return discretized_with_labels
+
+
+# --------------------------------------------------------------
+# Apriori Plots
+# --------------------------------------------------------------
+
+
+def plot_apriori_results(experiment_results, min_supp_range, min_conf_range):
+    """
+    Plot line charts for Min_Supp versus Frequent_Items_Count, Min_Supp versus Rules_Count,
+    and Min_Conf versus Rules_Count.
+
+    Parameters:
+    - experiment_results (list): List of dictionaries containing experiment results.
+    """
+    sns.set(style="whitegrid")
+
+    min_supp_values = [result["Min_Supp"] for result in experiment_results]
+    frequent_items_count_values = sorted(
+        set(result["Total_L_Count"] for result in experiment_results)
+    )
+    result_count_values = sorted(
+        set(result["Result_Count"] for result in experiment_results)
+    )
+
+    # Create a single figure with three subplots
+    fig, (ax1, ax2) = plt.subplots(1, 3, figsize=(20, 5))
+
+    # Plot line chart for Min_Supp versus Frequent_Items_Count
+    sns.lineplot(
+        x=min_supp_values,
+        y=frequent_items_count_values,
+        marker="o",
+        ax=ax1,
+        label="Frequent Items Count",
+    )
+    ax1.set_xlabel("Min_Supp")
+    ax1.set_ylabel("Frequent_Items_Count")
+    ax1.set_title("Min_Supp vs Frequent_Items_Count")
+    ax1.legend()
+
+    # Plot line chart for Min_Supp versus Rules_Count
+    sns.lineplot(
+        x=min_supp_values,
+        y=result_count_values,
+        marker="o",
+        ax=ax2,
+        label="Rules Count",
+    )
+    ax2.set_xlabel("Min_Supp")
+    ax2.set_ylabel("Rules_Count")
+    ax2.set_title("Min_Supp vs Rules_Count")
+    ax2.legend()
+
+
+def minConf_plot(experiment_results, min_supp_range, min_conf_range):
+    # Plot line chart for Min_Conf versus
+
+    sns.set(style="whitegrid")
+    fig, ax = plt.subplots(figsize=(10, 5))
+
+    # min_conf_values = sorted(set(result["Min_Conf"] for result in experiment_results))
+    for min_supp_value in min_supp_range:
+        result_subset = [
+            result
+            for result in experiment_results
+            if result["Min_Supp"] == min_supp_value
+        ]
+        result_subset = sorted(result_subset, key=lambda x: x["Min_Conf"])
+
+        conf_values = [result["Min_Conf"] for result in result_subset]
+        result_count_values = [result["Result_Count"] for result in result_subset]
+
+        # Plot the line graph for the current Min_Supp value
+        ax.plot(
+            conf_values,
+            result_count_values,
+            label=f"Min_Supp={min_supp_value}",
+            marker="o",
+        )
+
+    # Add labels and title
+    ax.set_xlabel("Min_Conf")
+    ax.set_ylabel("Result_Count")
+    ax.set_title("Result_Count vs Min_Conf (grouped by Min_Supp)")
+    ax.legend(title="Min_Supp", loc="upper left", bbox_to_anchor=(1, 1))
+
+    # Show the plot
+    plt.tight_layout()
+    plt.show()
+
+
+# --------------------------------------------------------------
+# Split Data
+# --------------------------------------------------------------
+
+
+def split_data(df):
+    """
+    Split a DataFrame into training and test sets.
+
+    Parameters:
+    - df (DataFrame): The input DataFrame.
+    - test_size (float): The proportion of the dataset to include in the test split.
+
+    Returns:
+    - train_df (DataFrame): The training set.
+    - test_df (DataFrame): The test set.
+
+    This function splits a DataFrame into training and test sets using the specified test size. The default test size is 0.2 (20% of the dataset).
+
+    Example:
+    >>> import pandas as pd
+    >>> # Assuming your DataFrame is named 'df'
+    >>> train_df, test_df = split_data(df)
+    """
+    X = df.drop(columns=["Fertility"]).values
+    y = df["Fertility"].values
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=40
+    )
+    return X_train, X_test, y_train, y_test
+
+
+# ----------------------------------------------------------------#
+# Metrics
+# ----------------------------------------------------------------#
+
+
+# Confusion Matrix
+def confusion_matrix(y_true, y_pred):
+    unique_classes = np.unique(y_true)
+    n_classes = len(unique_classes)
+    matrix = np.zeros((n_classes, n_classes))
+    for true, pred in zip(y_true, y_pred):
+        matrix[true, pred] += 1
+    return matrix
+
+
+# Accuracy
+def accuracy(y_true, y_pred):
+    cm = confusion_matrix(y_true, y_pred)
+    return np.sum(np.diag(cm)) / np.sum(cm)
+
+
+# Recall
+def recall(y_true, y_pred):
+    cm = confusion_matrix(y_true, y_pred)
+    return np.diag(cm) / np.sum(cm, axis=1)
+
+
+def precision(y_true, y_pred):
+    cm = confusion_matrix(y_true, y_pred)
+    return np.diag(cm) / np.sum(cm, axis=0)
+
+
+# f1_score
+def f1_score(y_true, y_pred):
+    cm = confusion_matrix(y_true, y_pred)
+    fp = np.sum(cm, axis=0) - np.diag(cm)
+    tn = np.sum(cm) - (np.sum(cm, axis=0) + np.sum(cm, axis=1) - np.diag(cm))
+
+    return fp / (fp + tn)
+
+
+def specifity(f1_score):
+    return 1 - f1_score
+
+
+def compute_metrics(y_test, y_pred):
+    conf_mat = confusion_matrix(y_test, y_pred)
+    acc = accuracy(y_test, y_pred)
+    rec = recall(y_test, y_pred)
+    prec = precision(y_test, y_pred)
+    fpr = f1_score(y_test, y_pred)
+    spe = specifity(fpr)
+    print("Confusion Matrix: \n", conf_mat)
+    print("Accuracy: ", acc.mean())
+    print("Recall: ", rec.mean())
+    print("Precision: ", prec.mean())
+    print("F1 score: ", fpr.mean())
+    print("Specifity: ", spe.mean())
+
+
+# ----------------------------------------------------------------#
+# Plot Confusion Matrix
+# ----------------------------------------------------------------#
+
+
+def plot_confusion_matrix(conf_mat):
+    fig, axes = plt.subplots(1, 2, sharex=True, figsize=(10, 4))
+    fig.suptitle("Confusion matrix", c="b")
+    sns.heatmap(
+        conf_mat / np.sum(conf_mat), ax=axes[0], annot=True, fmt=".2%", cmap="Blues"
+    )
+    axes[0].set_xlabel("Predicted labels")
+    axes[0].set_ylabel("Actual labels")
+
+    sns.heatmap(conf_mat, ax=axes[1], annot=True, cmap="Blues", fmt="")
+    axes[1].set_xlabel("Predicted labels")
+    axes[1].set_ylabel("Actual labels")
+    plt.show()

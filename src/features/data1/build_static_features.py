@@ -8,7 +8,7 @@ import seaborn as sns
 
 sys.path.append("../../../../Data-Mining-Project")
 
-from src.utils import correlation_plots
+from src.utils import correlation_plots, plot_distribution
 
 
 # from src.utils import qq_plot
@@ -68,31 +68,12 @@ sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm", fmt=".2f", linewidt
 plt.title("Correlation Heatmap")
 plt.show()
 
-df_without_fertility = df_without_fertility.drop(columns=["OC"])
+df_without_fertility = df_without_fertility.drop(columns=["OM"])
 
 
 # --------------------------------------------------------------
 # Data Normalization
 # --------------------------------------------------------------
-def qq_plot(df):
-    num_cols = len(df.columns)
-    num_rows = int(
-        np.ceil(num_cols / 3)
-    )  # Adjust the number of columns per row as needed
-
-    # Create a grid of subplots
-    fig, axes = plt.subplots(nrows=num_rows, ncols=3, figsize=(15, 3 * num_rows))
-    fig.suptitle("QQ Plots for Columns ", y=1.02)
-
-    # Iterate over each pair of columns and create QQ plots
-    for i, (col1, col2) in enumerate(zip(df.columns[:-1:2], df.columns[1::2])):
-        ax = axes[i // 3, i % 3]
-        sm.qqplot_2samples(df[col1], df[col2], ax=ax, line="45")
-        ax.set_title(f"QQ Plot - {col1} vs {col2}")
-
-    # Adjust layout
-    plt.tight_layout()
-    plt.show()
 
 
 # Min-Max Normalization
@@ -102,7 +83,7 @@ minMax_df = (df_without_fertility - df_without_fertility.min()) / (
 )
 
 
-qq_plot(minMax_df)
+plot_distribution(minMax_df)
 
 # Z-Score Normalization
 
@@ -110,4 +91,12 @@ zscore_df = (
     df_without_fertility - df_without_fertility.mean()
 ) / df_without_fertility.std()
 
-qq_plot(zscore_df)
+plot_distribution(zscore_df)
+
+
+# --------------------------------------------------------------
+# Export new dataframe
+# --------------------------------------------------------------
+
+minMax_df["Fertility"] = df["Fertility"]
+minMax_df.to_csv("../../../data/interim/03_static_dataset_features_built.csv")
