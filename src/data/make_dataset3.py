@@ -18,12 +18,12 @@ from src.utils import equal_frequency_discretization, equal_width_discretization
 # Read  Static file
 # --------------------------------------------------------------
 
-# file_id = "1DDUltRw8dDUIuNUTaSxdChr4Xdi0FMyV"
+file_id = "1DDUltRw8dDUIuNUTaSxdChr4Xdi0FMyV"
 
-# download_link = f"https://docs.google.com/spreadsheets/uc?id={file_id}"
+download_link = f"https://docs.google.com/spreadsheets/uc?id={file_id}"
 
-# static_dataset3_df = pd.read_csv(download_link)
-# static_dataset3_df.to_csv("../../data/raw/static_dataset3.csv")
+static_dataset3_df = pd.read_csv(download_link)
+static_dataset3_df.to_csv("../../data/raw/static_dataset3.csv")
 
 # --------------------------------------------------------------
 # Read the dataset
