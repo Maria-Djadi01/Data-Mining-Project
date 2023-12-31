@@ -1,0 +1,16 @@
+div{
+    background-color: #fff;
+    /* color: #fff; */
+    /* font-size: 20px; */
+    /* margin: 5px; */
+    /* border-radius: 10px; */
+    /* text-align: center; */
+}
+
+
+.streamlit-tabs {
+    border: 1px solid #750b0b;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 10px;
+}

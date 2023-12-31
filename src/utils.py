@@ -613,12 +613,19 @@ def compute_metrics(y_test, y_pred):
     prec = precision(y_test, y_pred)
     fpr = f1_score(y_test, y_pred)
     spe = specifity(fpr)
-    print("Confusion Matrix: \n", conf_mat)
-    print("Accuracy: ", acc.mean())
-    print("Recall: ", rec.mean())
-    print("Precision: ", prec.mean())
-    print("F1 score: ", fpr.mean())
-    print("Specifity: ", spe.mean())
+    # print("Confusion Matrix: \n", conf_mat)
+    # print("Accuracy: ", acc.mean())
+    # print("Recall: ", rec.mean())
+    # print("Precision: ", prec.mean())
+    # print("F1 score: ", fpr.mean())
+    # print("Specifity: ", spe.mean())
+    return {
+        "accuracy": acc.mean(),
+        "precision": prec.mean(),
+        "recall": rec.mean(),
+        "f1_score": fpr.mean(),
+        "specificity": spe.mean(),
+    }
 
 
 # ----------------------------------------------------------------#

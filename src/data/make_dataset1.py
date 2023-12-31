@@ -6,8 +6,6 @@ project_dir = "../../../Data-Mining-Project"
 sys.path.append(project_dir)
 
 import pandas as pd
-from src.utils import central_tendances
-import numpy as np
 
 
 # --------------------------------------------------------------

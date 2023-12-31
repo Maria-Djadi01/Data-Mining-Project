@@ -5,27 +5,32 @@ from collections import defaultdict
 from itertools import combinations
 import sys
 import matplotlib.pyplot as plt
+import os
 
 
-sys.path.append("../../../Data-Mining-Project")
+project_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, project_directory)
+
+
+# sys.path.append("../../../Data-Mining-Project")
 from src.utils import plot_apriori_results
 
 # ----------------------------------------------------------------#
 # Load data #
 # ----------------------------------------------------------------#
 
-df = pd.read_csv("../../data/processed/static_dataset3_discretized.csv", index_col=0)
+# df = pd.read_csv("../data/processed/static_dataset3_discretized.csv", index_col=0)
 
-apriori_df = df.drop(
-    columns=[
-        "Temperature",
-        "Humidity",
-        "Rainfall",
-        "Temperature_width_disc",
-        "Humidity_width_disc",
-        "Rainfall_width_disc",
-    ]
-)
+# apriori_df = df.drop(
+#     columns=[
+#         "Temperature",
+#         "Humidity",
+#         "Rainfall",
+#         "Temperature_width_disc",
+#         "Humidity_width_disc",
+#         "Rainfall_width_disc",
+#     ]
+# )
 
 # ----------------------------------------------------------------#
 # Apriori Algorithm
@@ -134,7 +139,7 @@ def calculate_confidence(rules, frequent_items, threshold):
     return rules_confidence
 
 
-def apriori(df, minSupp, minConf):
+def apriori(df, apriori_df, minSupp, minConf):
     transactions = apriori_df.index
 
     items = []
@@ -164,7 +169,7 @@ def apriori(df, minSupp, minConf):
     return total_L, rules, result
 
 
-total_L, rules, result = apriori(apriori_df, 10, 60)
+# total_L, rules, result = apriori(apriori_df, 10, 60)
 
 
 def perform_experiments(df, min_supp_range, min_conf_range):
@@ -190,7 +195,7 @@ def perform_experiments(df, min_supp_range, min_conf_range):
 min_supp_range = range(5, 21)
 min_conf_range = range(40, 100, 10)
 
-experiment_results = perform_experiments(apriori_df, min_supp_range, min_conf_range)
+# experiment_results = perform_experiments(apriori_df, min_supp_range, min_conf_range)
 
 
 def plot_min_supp_vs_frequent_items(experiment_results):
@@ -215,7 +220,7 @@ def plot_min_supp_vs_frequent_items(experiment_results):
     plt.show()
 
 
-plot_min_supp_vs_frequent_items(experiment_results)
+# plot_min_supp_vs_frequent_items(experiment_results)
 
 
 def plot_min_supp_vs_rules_count(experiment_results):
@@ -238,7 +243,7 @@ def plot_min_supp_vs_rules_count(experiment_results):
     plt.show()
 
 
-plot_min_supp_vs_rules_count(experiment_results)
+# plot_min_supp_vs_rules_count(experiment_results)
 
 
 def plot_min_conf_vs_rules_count(experiment_results):
@@ -274,7 +279,7 @@ def plot_min_conf_vs_rules_count(experiment_results):
     plt.show()
 
 
-plot_min_conf_vs_rules_count(experiment_results)
+# plot_min_conf_vs_rules_count(experiment_results)
 
 
 # ----------------------------------------------------------------#
@@ -282,4 +287,4 @@ plot_min_conf_vs_rules_count(experiment_results)
 # ----------------------------------------------------------------#
 
 
-strong_rules = [rule for rule, confidence in result.items() if confidence == 1.0]
+# strong_rules = [rule for rule, confidence in result.items() if confidence == 1.0]

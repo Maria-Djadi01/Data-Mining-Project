@@ -1,14 +1,16 @@
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
+import numpy as np
 from imblearn.under_sampling import RandomUnderSampler
 from sklearn.metrics import confusion_matrix, roc_curve, auc
+import matplotlib.pyplot as plt
+from sklearn.metrics import accuracy_score
 import time
 import sys
 
-# sys.path.insert(0, "../../../Data-Mining-Project")
-sys.path.insert(0, "D:\\2M\D.Mining\Data-Mining-Project")
+sys.path.insert(0, "../../../Data-Mining-Project")
+# sys.path.insert(0, "D:\\2M\D.Mining\Data-Mining-Project")
 # from models.knn import KNNClassifier
-from models.KNN import KNN
+from models.knn import KNN
 from src.utils import split_data, compute_metrics, plot_confusion_matrix
 
 # ----------------------------------------------------------------#
@@ -25,7 +27,6 @@ X_train.shape, y_train.shape
 # ----------------------------------------------------------------#
 # Undersampling
 # ----------------------------------------------------------------#
-import numpy as np
 
 desired_num_samples = 34
 sampling_strategy_dict = {
@@ -41,10 +42,33 @@ X_resampled, y_resampled = undersampler.fit_resample(X_train, y_train)
 X_resampled.shape, y_resampled.shape
 
 # ----------------------------------------------------------------#
+# Elbow Method for best parameter
+# ----------------------------------------------------------------#
+
+# Try different k values
+k_values = np.arange(1, 20)
+accuracy_scores = []
+
+for k in k_values:
+    knn = KNN(k=k)
+    knn.fit(X_train, y_train)
+    y_pred = knn.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    accuracy_scores.append(accuracy)
+
+# Plot the accuracy scores
+plt.plot(k_values, accuracy_scores, marker="o")
+plt.xlabel("k")
+plt.ylabel("Accuracy")
+# plt.title("Elbow Method for k-NN")
+plt.show()
+
+best_k = k_values[accuracy_scores.index(max(accuracy_scores))]
+
+# ----------------------------------------------------------------#
 # Our KNN
 # ----------------------------------------------------------------#
-print("Our KNN with k = 5")
-knn_3 = KNN(k=5)
+knn_3 = KNN(best_k)
 # knn_3 = KNNClassifier(k=3, distance_metric="euclidean")
 
 start_time = time.time()
@@ -63,9 +87,9 @@ plot_confusion_matrix(cm)
 # ----------------------------------------------------------------#
 # SKLearn KNN
 # ----------------------------------------------------------------#
-print("SKLearn KNN with k = 5")
 from sklearn.neighbors import KNeighborsClassifier
-knn_sklearn = KNeighborsClassifier(n_neighbors=5)
-knn_sklearn.fit(X_train, y_train)   
+
+knn_sklearn = KNeighborsClassifier(n_neighbors=best_k)
+knn_sklearn.fit(X_train, y_train)
 y_pred_sklearn = knn_sklearn.predict(X_test)
 compute_metrics(y_test, y_pred_sklearn)
