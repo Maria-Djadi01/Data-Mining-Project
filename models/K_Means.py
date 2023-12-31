@@ -1,36 +1,111 @@
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 
 class KMeans():
-    def __init__(self,):
+    def __init__(self, k):
+        self.k = k
         self.centroids = None
         self.clusters = None
         self.labels = None
         self.inertia = None
 
-    def fit(self, X, n_clusters, max_iter=100, distance='euclidean'):
+    def fit(self, X, max_iter=100, distance='euclidean', plot_steps=True, combined_plot=True):
         self.distance = distance
         X = np.array(X)  # Convert X to a numpy array
-        self.centroids = self._init_centroids(X, n_clusters)
-        for _ in range(max_iter):
+        self.centroids = self._init_centroids_kmeans_plus_plus(X, self.k)
+        for iteration in range(max_iter):
             self.clusters = self._create_clusters(X, self.centroids)
             previous_centroids = self.centroids
             self.centroids = self._get_centroids(self.clusters, X)
             if self._is_converged(previous_centroids, self.centroids):
                 break
-        self.labels = self._get_cluster_labels(self.clusters)
+            if plot_steps:
+                if iteration % 5 == 0:
+                    self._plot_iteration(X, iteration + 1)
+
+        self.labels = self._get_cluster_labels(self.clusters, X)
         self.inertia = self._get_inertia(self.clusters, self.centroids, X)
+
+        if plot_steps:
+            num_rows = (max_iter // 5) + 1
+            num_cols = 5
+
+            plt.figure(figsize=(15, 4 * num_rows))
+
+            for iteration in range(max_iter):
+                self.clusters = self._create_clusters(X, self.centroids)
+                previous_centroids = self.centroids
+                self.centroids = self._get_centroids(self.clusters, X)
+
+                if iteration % 5 == 0:
+                    plt.subplot(num_rows, num_cols, iteration // 5 + 1)
+
+                    cmap = ListedColormap(['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'])
+
+                    # Plot data points
+                    for cluster_idx, cluster in enumerate(self.clusters):
+                        plt.scatter(X[cluster][:, 0], X[cluster][:, 1], label=f'Cluster {cluster_idx}', cmap=cmap,
+                                    edgecolors='k')
+                        plt.scatter(self.centroids[:, 0], self.centroids[:, 1], marker='x', s=200, c='black',
+                                    label='Centroids')
+
+                        plt.title(f'K-Means Iteration {iteration + 1}')
+                        plt.xlabel('Feature 1')
+                        plt.ylabel('Feature 2')
+                        plt.legend()
+
+            plt.tight_layout()
+            plt.show()
 
     def predict(self, X):
         X = np.array(X)  # Convert X to a numpy array
         clusters = self._create_clusters(X, self.centroids)
-        return self._get_cluster_labels(clusters)
+        return self._get_cluster_labels(clusters, X)
+
+    def _plot_iteration(self, X, iteration):
+        plt.figure(figsize=(8, 8))
+        cmap = ListedColormap(['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'])
+
+        # Plot data points
+        for cluster_idx, cluster in enumerate(self.clusters):
+            plt.scatter(X[cluster][:, 0], X[cluster][:, 1], label=f'Cluster {cluster_idx}', cmap=cmap, edgecolors='k')
+
+        # Plot centroids
+        plt.scatter(self.centroids[:, 0], self.centroids[:, 1], marker='x', s=200, c='black', label='Centroids')
+
+        plt.title(f'K-Means Iteration {iteration}')
+        plt.xlabel('Feature 1')
+        plt.ylabel('Feature 2')
+        plt.legend()
+        plt.show()
     
-    def _init_centroids(self, X, n_clusters):
+    def predict(self, X):
+        X = np.array(X)  # Convert X to a numpy array
+        clusters = self._create_clusters(X, self.centroids)
+        return self._get_cluster_labels(clusters, X)
+    
+    def _init_centroids_randomly(self, X, n_clusters):
         n_samples, n_features = X.shape
         centroids = np.zeros((n_clusters, n_features))
         for k in range(n_clusters):
             centroid = X[np.random.choice(range(n_samples))]
             centroids[k] = centroid
+        return centroids
+    
+    def _init_centroids_kmeans_plus_plus(self, X, n_clusters):
+        n_samples, n_features = X.shape
+        centroids = np.zeros((n_clusters, n_features))
+        centroid = X[np.random.choice(range(n_samples))]
+        centroids[0] = centroid
+        for k in range(1, n_clusters):
+            distances = np.zeros((n_samples, k))
+            for i in range(n_samples):
+                for j in range(k):
+                    distances[i][j] = self._euclidean_distance(X[i], centroids[j])
+            min_distances = np.min(distances, axis=1)
+            max_distance = np.argmax(min_distances)
+            centroids[k] = X[max_distance]
         return centroids
     
     def _create_clusters(self, X, centroids):
@@ -67,12 +142,12 @@ class KMeans():
             centroid = np.mean(X[cluster], axis=0)
             centroids[idx] = centroid
         return centroids
-    
+
     def _is_converged(self, previous_centroids, centroids):
         distances = [self._euclidean_distance(centroids[i], previous_centroids[i]) for i in range(len(centroids))]
         return sum(distances) == 0
     
-    def _get_cluster_labels(self, clusters):
+    def _get_cluster_labels(self, clusters, X):
         labels = np.empty(X.shape[0])
         for cluster_idx, cluster in enumerate(clusters):
             for sample_idx in cluster:
@@ -100,8 +175,8 @@ if __name__ == "__main__":
     
     X, y = datasets.make_blobs()
     
-    k = KMeans()
-    k.fit(X, 3, distance='euclidean')
+    k = KMeans(k=3)
+    k.fit(X, distance='euclidean', plot_steps=True)
     k.print()
     
     plt.scatter(X[:, 0], X[:, 1], c=k.labels)

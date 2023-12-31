@@ -646,3 +646,44 @@ def plot_confusion_matrix(conf_mat):
     axes[1].set_xlabel("Predicted labels")
     axes[1].set_ylabel("Actual labels")
     plt.show()
+
+# ----------------------------------------------------------------
+# Silhouette Score
+# ----------------------------------------------------------------
+# ----------------------------------------------------------------
+# Silhouette Score
+# ----------------------------------------------------------------
+# silhouette_score from scratch
+def silhouette_score(X, labels):
+    X = np.array(X)
+    n_samples = X.shape[0]
+    silhouette_values = np.zeros(n_samples)
+
+    for i in range(n_samples):
+        a_i = silhouette_a(i, labels, X)
+        b_i = silhouette_b(i, labels, X)
+        silhouette_values[i] = silhouette(a_i, b_i)
+
+    # return the mean silhouette score
+    return np.mean(silhouette_values)
+
+def silhouette_a(sample_idx, labels, X):
+    cluster_idx = labels[sample_idx]
+    cluster_points = np.where(labels == cluster_idx)[0]
+    cluster_points = np.delete(cluster_points, np.where(cluster_points == sample_idx))
+    a_i = np.mean([euclidean_distance(X[sample_idx], X[i]) for i in cluster_points])
+    return a_i
+
+def silhouette_b(sample_idx, labels, X):
+    b_i = []
+    for cluster_idx in np.unique(labels):
+        if cluster_idx != labels[sample_idx]:
+            cluster_points = np.where(labels == cluster_idx)[0]
+            b_i.append(np.mean([euclidean_distance(X[sample_idx], X[i]) for i in cluster_points]))
+    return min(b_i) if b_i else 0
+
+def silhouette(a_i, b_i):
+    return (b_i - a_i) / max(a_i, b_i)
+
+def euclidean_distance(x1, x2):
+    return np.sqrt(np.sum((x1 - x2) ** 2))
