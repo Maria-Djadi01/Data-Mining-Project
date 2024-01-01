@@ -1,8 +1,10 @@
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 
 
 class KNN:
-    def __init__(self, k=5):
+    def __init__(self, k):
         self.k = k
         self.X = None
         self.y = None
@@ -19,10 +21,13 @@ class KNN:
         self.n_samples, self.n_features = X.shape
         self.n_classes = len(np.unique(y))
 
-    def predict(self, X):
+    def predict(self, X, visualize=True):
         self.distances = self._get_distances(X)
         self.k_nearest_neighbors = self._get_k_nearest_neighbors()
         self.predictions = self._get_predictions()
+        if visualize:
+            self._plot_iterations_visualization(X)
+
         return self.predictions.astype(int)
 
     def _get_distances(self, X):
@@ -53,6 +58,72 @@ class KNN:
 
     def _minkowski_distance(self, x1, x2):
         return self._minowski_distance(x1, x2) ** 3
+
+    def _plot_iterations_visualization(self, X):
+        cmap = ListedColormap(
+            ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF"]
+        )
+        for i, sample in enumerate(X):
+            if len(sample.shape) == 0:
+                sample = np.array([sample])  # Convert scalar to 1D array
+            sample = np.asarray(sample).reshape(1, -1)  # Ensure sample is a 2D array
+
+            plt.figure(figsize=(15, 5))
+
+            # Plot all points
+            plt.subplot(131)
+            plt.scatter(
+                self.X[:, 0], self.X[:, 1], c=self.y, cmap=cmap, edgecolors="k", s=50
+            )
+            plt.scatter(
+                sample[:, 0],
+                sample[:, 1],
+                c="red",
+                marker="x",
+                s=100,
+                label="Test Sample",
+            )
+            plt.title("All Points")
+
+            # Plot the distances to all other points
+            plt.subplot(132)
+            plt.scatter(
+                self.X[:, 0],
+                self.X[:, 1],
+                c=self.distances[i],
+                cmap=cmap,
+                edgecolors="k",
+                s=50,
+            )
+            plt.title("Distances")
+
+            # Plot the k-nearest neighbors
+            plt.subplot(133)
+            neighbors = self.k_nearest_neighbors[i]
+            plt.scatter(
+                self.X[:, 0], self.X[:, 1], c=self.y, cmap=cmap, edgecolors="k", s=50
+            )
+            plt.scatter(
+                self.X[neighbors, 0],
+                self.X[neighbors, 1],
+                facecolors="none",
+                edgecolors="black",
+                s=150,
+                label="Nearest Neighbors",
+            )
+            plt.scatter(
+                sample[:, 0],
+                sample[:, 1],
+                c="red",
+                marker="x",
+                s=100,
+                label="Test Sample",
+            )
+            plt.title("Nearest Neighbors")
+
+            plt.tight_layout()
+            plt.suptitle(f"Sample {i+1} Prediction Visualization")
+            plt.show()
 
 
 # if __name__ == "__main__":

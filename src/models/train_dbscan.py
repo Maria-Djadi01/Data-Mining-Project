@@ -2,10 +2,19 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import sys
+import os
 
-sys.path.insert(0,"D:\\2M\D.Mining\Data-Mining-Project")
+# project_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+# sys.path.insert(0, project_directory)
+
+sys.path.insert(0, r"C:\Users\HI\My-Github\Data-Mining-Project")
 from models.DBScan import DBScan
-from src.utils import split_data, compute_metrics, plot_confusion_matrix, silhouette_score
+from src.utils import (
+    split_data,
+    compute_metrics,
+    plot_confusion_matrix,
+    silhouette_score,
+)
 
 # ----------------------------------------------------------------
 # Load data
@@ -34,31 +43,53 @@ for eps in eps_range:
         silhouette_scores.append(silhouette_avg)
 
 # Reshape the silhouette_scores to match the shape of the heatmap
-silhouette_scores = np.array(silhouette_scores).reshape(len(eps_range), len(min_samples_range))
+silhouette_scores = np.array(silhouette_scores).reshape(
+    len(eps_range), len(min_samples_range)
+)
 
 # Create a heatmap
 plt.figure(figsize=(10, 6))
 eps_labels = [f"{eps:.1f}" for eps in eps_range]
 min_samples_labels = [str(min_samples) for min_samples in min_samples_range]
-plt.imshow(silhouette_scores, cmap='viridis', origin='lower', extent=[min_samples_range[0]-0.5, min_samples_range[-1]+0.5, eps_range[0]-0.05, eps_range[-1]+0.05])
-plt.colorbar(label='Silhouette Score')
+plt.imshow(
+    silhouette_scores,
+    cmap="viridis",
+    origin="lower",
+    extent=[
+        min_samples_range[0] - 0.5,
+        min_samples_range[-1] + 0.5,
+        eps_range[0] - 0.05,
+        eps_range[-1] + 0.05,
+    ],
+)
+plt.colorbar(label="Silhouette Score")
 plt.xticks(min_samples_range, min_samples_labels)
 plt.yticks(eps_range, eps_labels)
-plt.xlabel('Min Samples')
-plt.ylabel('Eps')
-plt.title('Silhouette Score Heatmap for Different Eps and Min Samples')
+plt.xlabel("Min Samples")
+plt.ylabel("Eps")
+plt.title("Silhouette Score Heatmap for Different Eps and Min Samples")
 
 # make the hitmap wider in the y axis
-plt.gca().set_aspect('auto')
+plt.gca().set_aspect("auto")
 # Find the hyperparameters that give the maximum silhouette score in the plot
-max_idx = np.unravel_index(np.argmax(silhouette_scores, axis=None), silhouette_scores.shape)
-plt.scatter(min_samples_range[max_idx[1]], eps_range[max_idx[0]], marker='*', color='red', label=f'Maximum Silhouette Score: eps={eps_range[max_idx[0]]:.1f}, min_samples={min_samples_range[max_idx[1]]}')
+max_idx = np.unravel_index(
+    np.argmax(silhouette_scores, axis=None), silhouette_scores.shape
+)
+plt.scatter(
+    min_samples_range[max_idx[1]],
+    eps_range[max_idx[0]],
+    marker="*",
+    color="red",
+    label=f"Maximum Silhouette Score: eps={eps_range[max_idx[0]]:.1f}, min_samples={min_samples_range[max_idx[1]]}",
+)
 # display the best hyperparameters in the plot
 plt.legend()
-plt.savefig('../../reports/figures/Part_2/DBScan_hyperparameters_tuning.png')
+plt.savefig("../../reports/figures/Part_2/DBScan_hyperparameters_tuning.png")
 plt.show()
 # save the plot
-print(f"The following hyperparameters give the maximum silhouette score: eps={eps_range[max_idx[0]]:.1f}, min_samples={min_samples_range[max_idx[1]]}")
+print(
+    f"The following hyperparameters give the maximum silhouette score: eps={eps_range[max_idx[0]]:.1f}, min_samples={min_samples_range[max_idx[1]]}"
+)
 
 # print the number of clusters
 print(f"Number of clusters: {len(np.unique(dbscan.cluster_labels))}")

@@ -60,7 +60,6 @@ for k in k_values:
 plt.plot(k_values, accuracy_scores, marker="o")
 plt.xlabel("k")
 plt.ylabel("Accuracy")
-# plt.title("Elbow Method for k-NN")
 plt.show()
 
 best_k = k_values[accuracy_scores.index(max(accuracy_scores))]
@@ -68,13 +67,12 @@ best_k = k_values[accuracy_scores.index(max(accuracy_scores))]
 # ----------------------------------------------------------------#
 # Our KNN
 # ----------------------------------------------------------------#
-knn_3 = KNN(best_k)
-# knn_3 = KNNClassifier(k=3, distance_metric="euclidean")
+
+knn = KNN(best_k)
 
 start_time = time.time()
-knn_3.fit(X_resampled, y_resampled)
-# knn_3.fit(X_train, y_train)
-y_pred = knn_3.predict(X_test)
+knn.fit(X_resampled, y_resampled)
+y_pred = knn.predict(X_test)
 end_time = time.time()
 RF_exec_time = end_time - start_time
 
@@ -84,6 +82,27 @@ print("Execution Time: ", RF_exec_time)
 cm = confusion_matrix(y_test, y_pred)
 
 plot_confusion_matrix(cm)
+
+
+sample_to_predict = [
+    0.74193548,
+    0.7032967,
+    0.59393491,
+    0.86607143,
+    0.47305389,
+    0.3203125,
+    1.0,
+    0.08759124,
+    0.0679185,
+    0.06220096,
+    0.06805195,
+    0.08490566,
+]
+
+knn = KNN(k=11)
+knn.fit(X_resampled, y_resampled)
+knn.predict(sample_to_predict, visualize=True)
+
 # ----------------------------------------------------------------#
 # SKLearn KNN
 # ----------------------------------------------------------------#
