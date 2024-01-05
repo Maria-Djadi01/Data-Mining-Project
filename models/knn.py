@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 class KNN:
@@ -24,6 +25,28 @@ class KNN:
         self.k_nearest_neighbors = self._get_k_nearest_neighbors()
         self.predictions = self._get_predictions()
         return self.predictions.astype(int)
+        
+    def visualize_steps(self, X, nb_plots=10):
+        fig, axes = plt.subplots(2, nb_plots // 2, figsize=(15, 10))
+
+        for i in range(nb_plots):
+            neighbors = self.k_nearest_neighbors[i].astype(int)
+            ax = axes[i // (nb_plots // 2), i % (nb_plots // 2)]
+
+            ax.scatter(self.X[:, 0], self.X[:, 1], c=self.y, cmap='viridis', label='Training Data')
+            ax.scatter(X[i, 0], X[i, 1], marker='*', s=200, c='red', label='Test Point')
+
+            for neighbor in neighbors:
+                ax.scatter(self.X[neighbor, 0], self.X[neighbor, 1], marker='o', s=100, edgecolors='k',
+                            facecolors='none', label='Neighbor')
+
+            ax.set_title(f'Test Point {i + 1}, Predicted Class: {int(self.predictions[i])}')
+            ax.set_xlabel('Feature 1')
+            ax.set_ylabel('Feature 2')
+            ax.legend()
+
+        plt.tight_layout()
+        plt.show()
 
     def _get_distances(self, X):
         distances = np.zeros((len(X), self.n_samples))
@@ -55,16 +78,21 @@ class KNN:
         return self._minowski_distance(x1, x2) ** 3
 
 
-# if __name__ == "__main__":
-#     # Test the KNN class
-#     from sklearn import datasets
-#     from sklearn.model_selection import train_test_split
-#     from sklearn.metrics import accuracy_score
+if __name__ == "__main__":
+    # Test the KNN class
+    from sklearn import datasets
+    from sklearn.model_selection import train_test_split
+    from sklearn.metrics import accuracy_score
 
-#     X, y = datasets.make_classification(n_samples=1000, n_features=10, n_classes=2, random_state=123)
-#     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=123)
+    X, y = datasets.make_classification(n_samples=1000, n_features=10, n_classes=2, random_state=123)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=123)
 
-#     clf = KNN(k=5)
-#     clf.fit(X_train, y_train)
-#     predictions = clf.predict(X_test)
-#     print("Accuracy:", accuracy_score(y_test, predictions))
+    clf = KNN(k=5)
+    clf.fit(X_train, y_train)
+    predictions = clf.predict(X_test)
+    print("Accuracy:", accuracy_score(y_test, predictions))
+
+    # Add the visualization step
+    clf.visualize_steps_3d(X_test, nb_plots=4)
+
+

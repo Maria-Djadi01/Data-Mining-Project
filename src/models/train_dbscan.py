@@ -32,6 +32,7 @@ for eps in eps_range:
         labels = dbscan.cluster_labels
         silhouette_avg = silhouette_score(X, labels)
         silhouette_scores.append(silhouette_avg)
+        print(f"silhouette score for eps={eps:.1f} and min_samples={min_samples}: {silhouette_avg}")
 
 # Reshape the silhouette_scores to match the shape of the heatmap
 silhouette_scores = np.array(silhouette_scores).reshape(len(eps_range), len(min_samples_range))
@@ -69,10 +70,73 @@ print(f"Number of clusters: {len(np.unique(dbscan.cluster_labels))}")
 eps = 0.9
 min_samples = 2
 dbscan = DBScan(eps=eps, min_samples=min_samples)
-dbscan.fit(X)
+dbscan.fit(X, plot_steps=True)
 labels = dbscan.cluster_labels
 # print the number of clusters
 print(f"Number of clusters: {len(np.unique(labels))}")
 
 # compute the silhouette score
 silhouette_avg = silhouette_score(X, labels)
+
+# ----------------------------------------------------------------
+# Dimensionality reduction to visualize the clusters
+# ----------------------------------------------------------------
+from sklearn.decomposition import PCA
+
+pca = PCA(n_components=3)
+X_pca = pca.fit_transform(X)
+
+# ----------------------------------------------------------------
+# Plot the clusters
+# ----------------------------------------------------------------
+from mpl_toolkits.mplot3d import Axes3D
+
+fig = plt.figure(figsize=(10, 8))
+ax = fig.add_subplot(111, projection='3d')
+
+scatter = ax.scatter(X_pca[:, 0], X_pca[:, 1], X_pca[:, 2], c=labels, cmap='viridis', marker='o')
+ax.set_xlabel('Principal Component 1')
+ax.set_ylabel('Principal Component 2')
+ax.set_zlabel('Principal Component 3')
+ax.set_title('3D Scatter Plot of Clusters in PCA Space')
+
+# Add a colorbar to show the mapping of labels to colors
+colorbar = plt.colorbar(scatter, ax=ax)
+colorbar.set_label('Cluster Labels')
+plt.savefig("../../reports/figures/Part_2/DBScan_clusters_pca.png")
+plt.show()
+
+features_names = df.drop(columns=["Fertility"]).columns
+
+for i, pc in enumerate(pca.components_):
+    top_features_indices = pc.argsort()[-5:][::-1]  # Adjust the number of top features to display
+    top_features = [features_names[index] for index in top_features_indices]
+    print(f"Top features for Principal Component {i+1}: {top_features}")
+
+# ----------------------------------------------------------------
+# Visualize the distribution of the clusters
+# ----------------------------------------------------------------
+plt.figure(figsize=(10, 6))
+plt.hist(labels, bins=len(np.unique(labels)))
+plt.xlabel('Cluster Label')
+plt.ylabel('Number of Data Points')
+plt.title('Distribution of Clusters')
+plt.show()
+
+# ----------------------------------------------------------------
+# DBScan with SKlearn
+# ----------------------------------------------------------------
+from sklearn.cluster import DBSCAN
+
+dbscan_sk = DBSCAN(eps=0.9, min_samples=2)
+dbscan_sk.fit(X)
+labels_sk = dbscan_sk.labels_
+# print the number of clusters
+print(f"Number of clusters: {len(np.unique(labels))}")
+
+# plot the clusters
+fig = plt.figure(figsize=(10, 8))
+ax = fig.add_subplot(111, projection='3d')
+
+scatter = ax.scatter(X_pca[:, 0], X_pca[:, 1], X_pca[:, 2], c=labels_sk, cmap='viridis', marker='o')
+ax.set_xlabel('Principal Component 1')

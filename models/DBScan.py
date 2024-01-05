@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
+from sklearn.decomposition import PCA
 
 class DBScan:
     def __init__(self, eps, min_samples):
@@ -11,15 +12,21 @@ class DBScan:
         self.n_features = None
         self.silhouette_scores = None
 
-    def fit(self, X):
+    def fit(self, X, plot_steps=False):
+        self.plot_steps = plot_steps
         self.X = X
         self.n_samples, self.n_features = X.shape
+        # X_pca to be used for plotting
+        if X.shape[1] > 3:
+            pca = PCA(n_components=3)
+            self.X_pca = pca.fit_transform(X)
         self.cluster_labels = self._dbscan()
+        
 
     def _dbscan(self):
         cluster_labels = np.zeros(self.n_samples, dtype=int)
         cluster_idx = 1
-
+        
         for i in range(self.n_samples):
             if cluster_labels[i] == 0:
                 if self._expand_cluster(cluster_labels, i, cluster_idx):
@@ -47,8 +54,8 @@ class DBScan:
                 elif cluster_labels[neighbor_idx] == -1:
                     cluster_labels[neighbor_idx] = cluster_idx  # Reassign noise to the cluster
             # plot clusters
-            if i % 20 == 0:
-                self._plot_clusters(cluster_labels, title=f'Iteration: {i}')
+            if i % 20 == 0 and self.plot_steps:
+                self._plot_clusters(cluster_labels, i)
             i += 1
         return True
 
@@ -61,19 +68,19 @@ class DBScan:
     def _get_distances(self, sample_idx):
         return np.sqrt(np.sum((self.X - self.X[sample_idx]) ** 2, axis=1))
 
-    def _plot_clusters(self, cluster_labels, title=''):
-        plt.figure(figsize=(8, 8))
-        cmap = ListedColormap(['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'])
-
-        # Plot data points
-        noise_indices = np.where(cluster_labels == -1)[0]
-        plt.scatter(self.X[:, 0], self.X[:, 1], c=cluster_labels, cmap=cmap, edgecolors='k')
-        plt.scatter(self.X[noise_indices, 0], self.X[noise_indices, 1], c='gray', marker='x', label='Noise', edgecolors='k')
-
-        plt.title(title)
-        plt.xlabel('Feature 1')
-        plt.ylabel('Feature 2')
-        plt.legend()
+    def _plot_clusters(self, cluster_labels, iteration):
+        fig = plt.figure(figsize=(10, 8))
+        ax = fig.add_subplot(111, projection='3d')
+        # plot the clusters
+        unique_labels = np.unique(cluster_labels)
+        colors = [plt.cm.Spectral(each) for each in np.linspace(0, 1, len(unique_labels))]
+        for cluster_idx, cluster in enumerate(unique_labels):
+            cluster_points = self.X_pca[cluster_labels == cluster]
+            ax.scatter(cluster_points[:, 0], cluster_points[:, 1], cluster_points[:, 2], color=colors[cluster_idx])
+        ax.set_xlabel('Principal Component 1')
+        ax.set_ylabel('Principal Component 2')
+        ax.set_zlabel('Principal Component 3')
+        ax.set_title(f"Iteration {iteration}")
         plt.show()
 
     def print(self):

@@ -7,10 +7,10 @@ from sklearn.metrics import accuracy_score
 import time
 import sys
 
-sys.path.insert(0, "../../../Data-Mining-Project")
-# sys.path.insert(0, "D:\\2M\D.Mining\Data-Mining-Project")
+# sys.path.insert(0, "../../../Data-Mining-Project")
+sys.path.insert(0, "D:\\2M\D.Mining\Data-Mining-Project")
 # from models.knn import KNNClassifier
-from models.knn import KNN
+from models.KNN import KNN
 from src.utils import split_data, compute_metrics, plot_confusion_matrix
 
 # ----------------------------------------------------------------#
@@ -84,6 +84,12 @@ print("Execution Time: ", RF_exec_time)
 cm = confusion_matrix(y_test, y_pred)
 
 plot_confusion_matrix(cm)
+
+# ----------------------------------------------------------------#
+# Visualize Steps
+# ----------------------------------------------------------------#
+knn_3.visualize_steps(X_test, 4)
+
 # ----------------------------------------------------------------#
 # SKLearn KNN
 # ----------------------------------------------------------------#

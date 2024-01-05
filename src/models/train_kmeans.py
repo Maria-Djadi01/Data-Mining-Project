@@ -71,7 +71,7 @@ plt.show()
 # Train KMeans with the best hyperparameters
 # ----------------------------------------------------------------
 kmeans = KMeans(k=2)
-kmeans.fit(X, combined_plot=True)
+kmeans.fit(X, plot_steps=True)
 labels = kmeans.predict(X)
 print(f"Number of clusters: {len(np.unique(labels))}")
 print(f"Silhouette score: {silhouette_score(X, labels)}")
@@ -81,3 +81,68 @@ kmeans_3.fit(X)
 labels_3 = kmeans_3.predict(X)
 print(f"Number of clusters: {len(np.unique(labels_3))}")
 print(f"Silhouette score: {silhouette_score(X, labels_3)}")
+
+# ----------------------------------------------------------------
+# Dimensionality reduction to visualize the clusters
+# ----------------------------------------------------------------
+from sklearn.decomposition import PCA
+
+pca = PCA(n_components=3)
+X_pca = pca.fit_transform(X)
+
+# ----------------------------------------------------------------
+# Plot the clusters
+# ----------------------------------------------------------------
+from mpl_toolkits.mplot3d import Axes3D
+
+fig = plt.figure(figsize=(10, 8))
+ax = fig.add_subplot(111, projection='3d')
+
+scatter = ax.scatter(X_pca[:, 0], X_pca[:, 1], X_pca[:, 2], c=labels, cmap='viridis', marker='o')
+ax.set_xlabel('Principal Component 1')
+ax.set_ylabel('Principal Component 2')
+ax.set_zlabel('Principal Component 3')
+ax.set_title('3D Scatter Plot of Clusters in PCA Space')
+
+# Add a colorbar to show the mapping of labels to colors
+colorbar = plt.colorbar(scatter, ax=ax)
+colorbar.set_label('Cluster Labels')
+plt.savefig("../../reports/figures/Part_2/KMeans_clusters_pca.png")
+plt.show()
+
+features_names = df.drop(columns=["Fertility"]).columns
+
+for i, pc in enumerate(pca.components_):
+    top_features_indices = pc.argsort()[-5:][::-1]  # Adjust the number of top features to display
+    top_features = [features_names[index] for index in top_features_indices]
+    print(f"Top features for Principal Component {i+1}: {top_features}")
+
+# ----------------------------------------------------------------
+# Visualize the distribution of the clusters
+# ----------------------------------------------------------------
+plt.figure(figsize=(10, 6))
+plt.bar(labels, bins=len(np.unique(labels)))
+plt.xlabel('Cluster Label')
+plt.ylabel('Number of Data Points')
+plt.title('Distribution of Clusters')
+plt.show()
+
+# ----------------------------------------------------------------
+# Plot the clusters K = 3
+# ----------------------------------------------------------------
+from mpl_toolkits.mplot3d import Axes3D
+
+fig = plt.figure(figsize=(10, 8))
+ax = fig.add_subplot(111, projection='3d')
+
+scatter = ax.scatter(X_pca[:, 0], X_pca[:, 1], X_pca[:, 2], c=labels_3, cmap='viridis', marker='o')
+ax.set_xlabel('Principal Component 1')
+ax.set_ylabel('Principal Component 2')
+ax.set_zlabel('Principal Component 3')
+ax.set_title('3D Scatter Plot of Clusters in PCA Space')
+
+# Add a colorbar to show the mapping of labels to colors
+colorbar = plt.colorbar(scatter, ax=ax)
+colorbar.set_label('Cluster Labels')
+plt.savefig("../../reports/figures/Part_2/KMeans_clusters_pca_labels_3.png")
+plt.show()
