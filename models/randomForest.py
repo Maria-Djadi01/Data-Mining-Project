@@ -6,7 +6,7 @@ from models.decisionTree import DecisionTree
 
 
 class RandomForest:
-    def __init__(self, n_trees=10, max_depth=None, min_samples_split=2):
+    def __init__(self, n_trees, max_depth, min_samples_split):
         self.n_trees = n_trees
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split

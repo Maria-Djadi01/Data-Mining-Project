@@ -82,18 +82,3 @@ print("Execution Time: ", RF_exec_time)
 cm = confusion_matrix(y_test, y_pred)
 
 plot_confusion_matrix(cm)
-
-# ----------------------------------------------------------------#
-# Visualize Steps
-# ----------------------------------------------------------------#
-knn.visualize_steps(X_test, 4)
-
-# ----------------------------------------------------------------#
-# SKLearn KNN
-# ----------------------------------------------------------------#
-from sklearn.neighbors import KNeighborsClassifier
-
-knn_sklearn = KNeighborsClassifier(n_neighbors=best_k)
-knn_sklearn.fit(X_train, y_train)
-y_pred_sklearn = knn_sklearn.predict(X_test)
-compute_metrics(y_test, y_pred_sklearn)
