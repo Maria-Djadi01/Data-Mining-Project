@@ -84,7 +84,7 @@ print(f"Number of clusters: {len(np.unique(labels))}")
 print(f"Silhouette score: {silhouette_score(X, labels)}")
 
 kmeans_3 = KMeans(k=3)
-kmeans_3.fit(X)
+kmeans_3.fit(X, plot_steps=True)
 labels_3 = kmeans_3.predict(X)
 print(f"Number of clusters: {len(np.unique(labels_3))}")
 print(f"Silhouette score: {silhouette_score(X, labels_3)}")
@@ -141,8 +141,6 @@ plt.show()
 # ----------------------------------------------------------------
 # Plot the clusters K = 3
 # ----------------------------------------------------------------
-from mpl_toolkits.mplot3d import Axes3D
-
 fig = plt.figure(figsize=(10, 8))
 ax = fig.add_subplot(111, projection="3d")
 
