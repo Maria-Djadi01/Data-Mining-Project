@@ -98,7 +98,7 @@ scatter = ax.scatter(X_pca[:, 0], X_pca[:, 1], X_pca[:, 2], c=labels, cmap='viri
 ax.set_xlabel('Principal Component 1')
 ax.set_ylabel('Principal Component 2')
 ax.set_zlabel('Principal Component 3')
-ax.set_title('3D Scatter Plot of Clusters in PCA Space')
+ax.set_title('DBScan Clustering')
 
 # Add a colorbar to show the mapping of labels to colors
 colorbar = plt.colorbar(scatter, ax=ax)
