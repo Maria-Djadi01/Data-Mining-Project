@@ -1,17 +1,35 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import *
-import pandas as pd
 from PIL import Image, ImageTk
 import sys
 import os
-
+import time
+import seaborn as sns
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+from sklearn.metrics import confusion_matrix
+from imblearn.under_sampling import RandomUnderSampler
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 project_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, project_directory)
 
-# sys.path.insert(0, "../../../Data-Mining-Project")
+
 from models.apriori import apriori
+from models.knn import KNN
+from models.decisionTree import DecisionTree
+from models.randomForest import RandomForest
+from models.K_Means import KMeans
+from models.DBScan import DBScan
+from src.utils import (
+    split_data,
+    compute_metrics,
+    plot_confusion_matrix,
+    silhouette_score,
+)
+
 
 # Agriculture
 agri_eda_images = {
@@ -65,12 +83,12 @@ width_img = r"..\reports\figures\03_EDA\Discretized_Distribution_Width.png"
 window_width = 1100
 window_height = 650
 
-df = pd.read_csv(
+df_3 = pd.read_csv(
     r"D:/2M\D.Mining\Data-Mining-Project/data/processed/static_dataset3_discretized.csv",
     index_col=0,
 )
 
-apriori_df = df.drop(
+apriori_df = df_3.drop(
     columns=[
         "Temperature",
         "Humidity",
@@ -142,6 +160,216 @@ def on_focus_out(entry, placeholder):
         entry.config(fg="grey")
 
 
+df_1 = pd.read_csv(
+    r"D:/2M/D.Mining\Data-Mining-Project/data/interim/03_static_dataset_features_built.csv"
+)
+X_train, X_test, y_train, y_test = split_data(df_1)
+desired_num_samples = 34
+sampling_strategy_dict = {
+    class_label: desired_num_samples
+    for class_label, desired_num_samples in zip(*np.unique(y_train, return_counts=True))
+}
+
+undersampler = RandomUnderSampler(
+    sampling_strategy=sampling_strategy_dict, random_state=42
+)
+X_resampled, y_resampled = undersampler.fit_resample(X_train, y_train)
+
+from sklearn.preprocessing import StandardScaler
+
+X = df_1.drop(columns=["Fertility"])
+scaler = StandardScaler()
+X = scaler.fit_transform(X)
+
+from sklearn.decomposition import PCA
+
+pca = PCA(n_components=3)
+X_pca = pca.fit_transform(X)
+
+
+def plot_cm(conf_mat):
+    fig, axes = plt.subplots(1, 2, sharex=True, figsize=(10, 4))
+    fig.suptitle("Confusion matrix", c="b")
+    sns.heatmap(
+        conf_mat / np.sum(conf_mat), ax=axes[0], annot=True, fmt=".2%", cmap="Blues"
+    )
+    axes[0].set_xlabel("Predicted labels")
+    axes[0].set_ylabel("Actual labels")
+
+    sns.heatmap(conf_mat, ax=axes[1], annot=True, cmap="Blues", fmt="")
+    axes[1].set_xlabel("Predicted labels")
+    axes[1].set_ylabel("Actual labels")
+
+    # Return the Figure object
+    return fig
+
+
+def plot_3d_kmeans(X_pca, labels_3):
+    fig = plt.figure(figsize=(10, 8))
+    ax = fig.add_subplot(111, projection="3d")
+
+    scatter = ax.scatter(
+        X_pca[:, 0], X_pca[:, 1], X_pca[:, 2], c=labels_3, cmap="viridis", marker="o"
+    )
+    ax.set_xlabel("Principal Component 1")
+    ax.set_ylabel("Principal Component 2")
+    ax.set_zlabel("Principal Component 3")
+    ax.set_title("3D Scatter Plot of Clusters in PCA Space")
+
+    # Add a colorbar to show the mapping of labels to colors
+    colorbar = plt.colorbar(scatter, ax=ax)
+    colorbar.set_label("Cluster Labels")
+    return fig
+
+
+def plot_3d_DBScan(X_pca, labels):
+    fig1 = plt.figure(figsize=(10, 8))
+    ax = fig1.add_subplot(111, projection="3d")
+
+    scatter = ax.scatter(
+        X_pca[:, 0], X_pca[:, 1], X_pca[:, 2], c=labels, cmap="viridis", marker="o"
+    )
+    ax.set_xlabel("Principal Component 1")
+    ax.set_ylabel("Principal Component 2")
+    ax.set_zlabel("Principal Component 3")
+    ax.set_title("3D Scatter Plot")
+
+    # Add a colorbar to show the mapping of labels to colors
+    colorbar = plt.colorbar(scatter, ax=ax)
+    colorbar.set_label("Cluster Labels")
+    return fig1
+
+
+def add_additional_canvas(parent_frame):
+    additional_canvas = tk.Canvas(
+        parent_frame, width=window_width - window_width / 5, height=window_height
+    )
+    additional_canvas.pack()
+    return additional_canvas
+
+
+def execute_model(
+    model,
+    canvas,
+    k=None,
+    n_trees=None,
+    max_depth=None,
+    min_samples_split=None,
+    eps=None,
+):
+    if model == KNN:
+        classifier = model(k)
+    elif model == DecisionTree:
+        classifier = model(max_depth, min_samples_split)
+    elif model == RandomForest:
+        classifier = model(n_trees, max_depth, min_samples_split)
+    elif model == DBScan:
+        classifier = model(eps, min_samples_split)
+
+    if model == DecisionTree or model == RandomForest:
+        start_time = time.time()
+        classifier.fit(X_resampled, y_resampled)
+        y_pred = classifier.predict(X_test)
+        end_time = time.time()
+        RF_exec_time = end_time - start_time
+        metrics_result = compute_metrics(y_test, y_pred)
+        cm = confusion_matrix(y_test, y_pred)
+    elif model == KNN:
+        start_time = time.time()
+        classifier.fit(X_resampled, y_resampled)
+        y_pred = classifier.predict(X_test, visualize=False)
+        end_time = time.time()
+        RF_exec_time = end_time - start_time
+        metrics_result = compute_metrics(y_test, y_pred)
+        cm = confusion_matrix(y_test, y_pred)
+
+    # Format the information
+    info_text = f"Metrics:\n"
+    info_text += f"Accuracy: {metrics_result['accuracy']:.2f}\n"
+    info_text += f"Precision: {metrics_result['precision']:.2f}\n"
+    info_text += f"Recall: {metrics_result['recall']:.2f}\n"
+    info_text += f"F1 Score: {metrics_result['f1_score']:.2f}\n"
+    info_text += f"Specificity: {metrics_result['specificity']:.2f}\n"
+    info_text += f"Execution Time: {RF_exec_time:.2f} seconds"
+
+    # Clear existing widgets in the canvas
+    for widget in canvas.winfo_children():
+        widget.destroy()
+
+    # Create or update a text widget in the canvas
+    text_widget = tk.Text(canvas, wrap="word", width=40, height=10)
+    text_widget.insert(tk.END, info_text)
+    text_widget.pack()
+    canvas_ad = add_additional_canvas(parent_frame=canvas)
+    fig = plot_cm(cm)
+    img = FigureCanvasTkAgg(fig, master=canvas_ad)
+    img.draw()
+    img.get_tk_widget().pack()
+
+
+def execute_unsupervised_model(model, canvas, k=None, eps=None, min_samples_split=None):
+    global start_time, end_time
+    if model == KMeans:
+        classifier = model(k)
+        start_time = time.time()
+        classifier.fit(X, plot_steps=False)
+        labels = classifier.predict(X)
+        end_time = time.time()
+    elif model == DBScan:
+        classifier = model(eps, min_samples_split)
+        start_time = time.time()
+        classifier.fit(X, plot_steps=False)
+        labels = classifier.cluster_labels
+        end_time = time.time()
+
+    RF_exec_time = end_time - start_time
+    info_text = f"Results:\n"
+    info_text += f"Execution Time: {RF_exec_time:.2f} seconds\n"
+    info_text += f"Number of clusters: {len(np.unique(labels)):.2f}\n"
+    info_text += f"Silhouette Score: {silhouette_score(X, labels):.2f}"
+
+    for widget in canvas.winfo_children():
+        widget.destroy()
+
+    # Create or update a text widget in the canvas
+    text_widget = tk.Text(canvas, wrap="word", width=40, height=10)
+    text_widget.insert(tk.END, info_text)
+    text_widget.pack()
+
+    if model == DBScan:
+        canvas_ad = add_additional_canvas(parent_frame=canvas)
+        fig = plot_3d_DBScan(X_pca, labels)
+        img = FigureCanvasTkAgg(fig, master=canvas_ad)
+        img.draw()
+        img.get_tk_widget().pack()
+    elif model == KMeans:
+        canvas_ad = add_additional_canvas(parent_frame=canvas)
+        fig = plot_3d_kmeans(X_pca, labels)
+        img = FigureCanvasTkAgg(fig, master=canvas_ad)
+        img.draw()
+        img.get_tk_widget().pack()
+
+
+def execute_apriori(canvas, df, apriori_df, minSup, min_conf):
+    global result
+    total_L, rules, result = apriori(df, apriori_df, minSup, min_conf)
+    print(result)
+
+    # Format the information
+    # info_text = "Apriori Results:\n"
+
+    # formatted_string = "\n".join([f"{key}: {value}" for key, value in result.items()])
+    # info_text += formatted_string
+    # # Clear existing widgets in the canvas
+    # for widget in canvas.winfo_children():
+    #     widget.destroy()
+
+    # # Create or update a text widget in the canvas
+    # text_widget = tk.Text(canvas, wrap="word", width=40, height=10)
+    # text_widget.insert(tk.END, formatted_string)
+    # text_widget.pack()
+
+
 # Create the main window
 root = tk.Tk()
 root.title("Data Mining Project")
@@ -196,7 +424,7 @@ agri_eda_choices = [
     "Fertility",
 ]
 agri_eda_choice = StringVar()
-agri_eda_choice.set(agri_eda_choices[0])
+agri_eda_choice.set("EDA")
 choice_combobox = ttk.Combobox(
     sidebar_frame, textvariable=agri_eda_choice, values=agri_eda_choices
 )
@@ -220,7 +448,7 @@ agri_process_choices = [
     "Z-score Normalization",
 ]
 agri_process_choice = StringVar()
-agri_process_choice.set(agri_process_choices[0])
+agri_process_choice.set("Pre Processing")
 choice_combobox = ttk.Combobox(
     sidebar_frame, textvariable=agri_process_choice, values=agri_process_choices
 )
@@ -233,88 +461,121 @@ choice_combobox.bind(
 
 k_entry = tk.Entry(sidebar_frame, width=30)
 k_entry.pack(pady=10)
-k_entry.insert(0, "Enter Number of Neighbors")
+k_entry.insert(0, "Neighbors")
 k_entry.config(fg="grey")
-k_entry.bind("<FocusIn>", lambda event, e=k_entry: on_entry_click(e, "K Value"))
-k_entry.bind("<FocusOut>", lambda event, e=k_entry: on_focus_out(e, "K Value"))
-
-
-import time
-import sys
-import io
-import seaborn as sns
-import matplotlib.pyplot as plt
-import pandas as pd
-import numpy as np
-from imblearn.under_sampling import RandomUnderSampler
-
-# sys.path.insert(0, "../../../Data-Mining-Project")
-sys.path.insert(0, "D:\\2M\D.Mining\Data-Mining-Project")
-
-from models.knn import KNN
-from src.utils import split_data, compute_metrics, plot_confusion_matrix
-from sklearn.metrics import confusion_matrix
-
-
-# df = pd.read_csv(
-#     r"C:\Users\HI\My-Github\Data-Mining-Project\data\interim\03_static_dataset_features_built.csv",
-#     index_col=0,
-# )
-
-df = pd.read_csv(
-    r"D:/2M/D.Mining\Data-Mining-Project/data/interim/03_static_dataset_features_built.csv"
-)
-X_train, X_test, y_train, y_test = split_data(df)
-desired_num_samples = 34
-sampling_strategy_dict = {
-    class_label: desired_num_samples
-    for class_label, desired_num_samples in zip(*np.unique(y_train, return_counts=True))
-}
-
-undersampler = RandomUnderSampler(
-    sampling_strategy=sampling_strategy_dict, random_state=42
-)
-X_resampled, y_resampled = undersampler.fit_resample(X_train, y_train)
-
-
-def execute_knn(KNN, k, canvas):
-    knn_3 = KNN(k)
-    start_time = time.time()
-    knn_3.fit(X_resampled, y_resampled)
-    y_pred = knn_3.predict(X_test)
-    end_time = time.time()
-    RF_exec_time = end_time - start_time
-    metrics_result = compute_metrics(y_test, y_pred)
-    cm = confusion_matrix(y_test, y_pred)
-
-    # Format the information
-    info_text += f"Metrics:\n"
-    info_text += f"Accuracy: {metrics_result['accuracy']:.2f}\n"
-    info_text += f"Precision: {metrics_result['precision']:.2f}\n"
-    info_text += f"Recall: {metrics_result['recall']:.2f}\n"
-    info_text += f"F1 Score: {metrics_result['f1_score']:.2f}\n"
-    info_text += f"Specificity: {metrics_result['specificity']:.2f}\n"
-    info_text += f"Execution Time: {RF_exec_time:.2f} seconds"
-
-    # Clear existing widgets in the canvas
-    for widget in canvas.winfo_children():
-        widget.destroy()
-
-    # Create or update a text widget in the canvas
-    text_widget = tk.Text(canvas, wrap="word", width=40, height=10)
-    text_widget.insert(tk.END, info_text)
-    text_widget.pack()
-    plot_confusion_matrix(cm)
-
+k_entry.bind("<FocusIn>", lambda event, e=k_entry: on_entry_click(e, "Neighbors"))
+k_entry.bind("<FocusOut>", lambda event, e=k_entry: on_focus_out(e, "Neighbors"))
 
 knn_button = ttk.Button(
     sidebar_frame,
     width=30,
     padding=5,
-    text="Knn",
-    command=lambda: execute_knn(KNN, int(k_entry.get()), canvas1),
+    text="KNN",
+    command=lambda: execute_model(KNN, canvas1, k=int(k_entry.get())),
 )
 knn_button.pack(pady=10)
+
+kmeans_button = ttk.Button(
+    sidebar_frame,
+    width=30,
+    padding=5,
+    text="K-Means",
+    command=lambda: execute_unsupervised_model(KMeans, canvas1, k=int(k_entry.get())),
+)
+kmeans_button.pack(pady=10)
+
+maxDepth_entry = tk.Entry(sidebar_frame, width=30)
+maxDepth_entry.pack(pady=10)
+maxDepth_entry.insert(0, "MaxDepth")
+maxDepth_entry.config(fg="grey")
+maxDepth_entry.bind(
+    "<FocusIn>", lambda event, e=maxDepth_entry: on_entry_click(e, "MaxDepth")
+)
+maxDepth_entry.bind(
+    "<FocusOut>", lambda event, e=maxDepth_entry: on_focus_out(e, "MaxDepth")
+)
+
+minSamples_entry = tk.Entry(sidebar_frame, width=30)
+minSamples_entry.pack(pady=10)
+minSamples_entry.insert(0, "MinSamples")
+minSamples_entry.config(fg="grey")
+minSamples_entry.bind(
+    "<FocusIn>",
+    lambda event, e=minSamples_entry: on_entry_click(e, "MinSamples"),
+)
+minSamples_entry.bind(
+    "<FocusOut>",
+    lambda event, e=minSamples_entry: on_focus_out(e, "MinSamples"),
+)
+
+DT_button = ttk.Button(
+    sidebar_frame,
+    width=30,
+    padding=5,
+    text="Decision Tree",
+    command=lambda: execute_model(
+        DecisionTree,
+        canvas1,
+        max_depth=int(maxDepth_entry.get()),
+        min_samples_split=int(minSamples_entry.get()),
+    ),
+)
+DT_button.pack(pady=10)
+
+trees_entry = tk.Entry(sidebar_frame, width=30)
+trees_entry.pack(pady=10)
+trees_entry.insert(0, "Trees")
+trees_entry.config(fg="grey")
+trees_entry.bind(
+    "<FocusIn>",
+    lambda event, e=trees_entry: on_entry_click(e, "Trees"),
+)
+trees_entry.bind(
+    "<FocusOut>",
+    lambda event, e=trees_entry: on_focus_out(e, "Trees"),
+)
+
+RF_button = ttk.Button(
+    sidebar_frame,
+    width=30,
+    padding=5,
+    text="Random Forest",
+    command=lambda: execute_model(
+        RandomForest,
+        canvas1,
+        n_trees=int(trees_entry.get()),
+        max_depth=int(maxDepth_entry.get()),
+        min_samples_split=int(minSamples_entry.get()),
+    ),
+)
+RF_button.pack(pady=10)
+
+eps_entry = tk.Entry(sidebar_frame, width=30)
+eps_entry.pack(pady=10)
+eps_entry.insert(0, "Eps")
+eps_entry.config(fg="grey")
+eps_entry.bind(
+    "<FocusIn>",
+    lambda event, e=eps_entry: on_entry_click(e, "Eps"),
+)
+eps_entry.bind(
+    "<FocusOut>",
+    lambda event, e=eps_entry: on_focus_out(e, "Eps"),
+)
+
+DBScan_button = ttk.Button(
+    sidebar_frame,
+    width=30,
+    padding=5,
+    text="DBScan",
+    command=lambda: execute_unsupervised_model(
+        DBScan,
+        canvas1,
+        eps=float(eps_entry.get()),
+        min_samples_split=int(minSamples_entry.get()),
+    ),
+)
+DBScan_button.pack(pady=10)
 
 # ------------------------------------------------------------
 # COVID-19
@@ -353,7 +614,7 @@ eda_label_2.pack(pady=10)
 
 covid_eda_choices = ["Data", "Columns", "Quantiles", "Histogram", "Bar Plot"]
 covid_eda_choice = StringVar()
-covid_eda_choice.set(covid_eda_choices[0])
+covid_eda_choice.set("EDA")
 choice_combobox = ttk.Combobox(
     sidebar_frame, textvariable=covid_eda_choice, values=covid_eda_choices
 )
@@ -455,7 +716,7 @@ eda_label_3.pack(pady=10)
 
 fert_eda_choices = ["Data", "Columns", "Quantiles", "Numerical", "Categorical"]
 fert_eda_choice = StringVar()
-fert_eda_choice.set(fert_eda_choices[0])
+fert_eda_choice.set("EDA")
 choice_combobox = ttk.Combobox(
     sidebar_frame, textvariable=fert_eda_choice, values=fert_eda_choices
 )
@@ -486,24 +747,24 @@ desc_width_button.pack(pady=10)
 
 minSup_entry = tk.Entry(sidebar_frame, width=30)
 minSup_entry.pack(pady=10)
-minSup_entry.insert(0, "Enter support value")
+minSup_entry.insert(0, "MinSupp")
 minSup_entry.config(fg="grey")
 minSup_entry.bind(
-    "<FocusIn>", lambda event, e=minSup_entry: on_entry_click(e, "Support Value")
+    "<FocusIn>", lambda event, e=minSup_entry: on_entry_click(e, "MinSupp")
 )
 minSup_entry.bind(
-    "<FocusOut>", lambda event, e=minSup_entry: on_focus_out(e, "Support Value")
+    "<FocusOut>", lambda event, e=minSup_entry: on_focus_out(e, "MinSupp")
 )
 
 minConf_entry = tk.Entry(sidebar_frame, width=30)
 minConf_entry.pack(pady=10)
-minConf_entry.insert(0, "Enter support value")
+minConf_entry.insert(0, "MinConf")
 minConf_entry.config(fg="grey")
 minConf_entry.bind(
-    "<FocusIn>", lambda event, e=minConf_entry: on_entry_click(e, "Confidence Value")
+    "<FocusIn>", lambda event, e=minConf_entry: on_entry_click(e, "MinConf")
 )
 minConf_entry.bind(
-    "<FocusOut>", lambda event, e=minConf_entry: on_focus_out(e, "Confidence Value")
+    "<FocusOut>", lambda event, e=minConf_entry: on_focus_out(e, "MinConf")
 )
 
 apriori_button = ttk.Button(
@@ -511,11 +772,19 @@ apriori_button = ttk.Button(
     width=30,
     padding=5,
     text="Apriori",
-    command=lambda: apriori(
-        df, apriori_df, int(minSup_entry.get()), int(minConf_entry.get())
+    command=lambda: execute_apriori(
+        canvas3, df_1, apriori_df, float(minSup_entry.get()), float(minConf_entry.get())
     ),
 )
 apriori_button.pack(pady=10)
+
+strong_rules_button = ttk.Button(
+    sidebar_frame,
+    width=30,
+    padding=5,
+    text="Strong Rules",
+)
+strong_rules_button.pack(pady=10)
 
 # ------------------------------------------------------------
 

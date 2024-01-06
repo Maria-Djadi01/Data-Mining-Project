@@ -163,23 +163,23 @@ class KNN:
             plt.show()
 
 
-if __name__ == "__main__":
-    # Test the KNN class
-    from sklearn import datasets
-    from sklearn.model_selection import train_test_split
-    from sklearn.metrics import accuracy_score
+# if __name__ == "__main__":
+#     # Test the KNN class
+#     from sklearn import datasets
+#     from sklearn.model_selection import train_test_split
+#     from sklearn.metrics import accuracy_score
 
-    X, y = datasets.make_classification(
-        n_samples=1000, n_features=10, n_classes=2, random_state=123
-    )
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=123
-    )
+#     X, y = datasets.make_classification(
+#         n_samples=1000, n_features=10, n_classes=2, random_state=123
+#     )
+#     X_train, X_test, y_train, y_test = train_test_split(
+#         X, y, test_size=0.2, random_state=123
+#     )
 
-    clf = KNN(k=5)
-    clf.fit(X_train, y_train)
-    predictions = clf.predict(X_test)
-    print("Accuracy:", accuracy_score(y_test, predictions))
+#     clf = KNN(k=5)
+#     clf.fit(X_train, y_train)
+#     predictions = clf.predict(X_test)
+#     print("Accuracy:", accuracy_score(y_test, predictions))
 
-    # Add the visualization step
-    clf.visualize_steps_3d(X_test, nb_plots=4)
+#     # Add the visualization step
+#     clf.visualize_steps_3d(X_test, nb_plots=4)

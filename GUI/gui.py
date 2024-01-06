@@ -9,7 +9,9 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+from sklearn.metrics import confusion_matrix
 from imblearn.under_sampling import RandomUnderSampler
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 project_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, project_directory)
@@ -21,8 +23,12 @@ from models.decisionTree import DecisionTree
 from models.randomForest import RandomForest
 from models.K_Means import KMeans
 from models.DBScan import DBScan
-from src.utils import split_data, compute_metrics, plot_confusion_matrix
-from sklearn.metrics import confusion_matrix
+from src.utils import (
+    split_data,
+    compute_metrics,
+    plot_confusion_matrix,
+    silhouette_score,
+)
 
 # Agriculture
 agri_eda_images = {
@@ -169,6 +175,79 @@ undersampler = RandomUnderSampler(
 X_resampled, y_resampled = undersampler.fit_resample(X_train, y_train)
 
 
+from sklearn.preprocessing import StandardScaler
+
+X = df_1.drop(columns=["Fertility"])
+scaler = StandardScaler()
+X = scaler.fit_transform(X)
+
+from sklearn.decomposition import PCA
+
+pca = PCA(n_components=3)
+X_pca = pca.fit_transform(X)
+
+
+def plot_cm(conf_mat):
+    fig, axes = plt.subplots(1, 2, sharex=True, figsize=(10, 4))
+    fig.suptitle("Confusion matrix", c="b")
+    sns.heatmap(
+        conf_mat / np.sum(conf_mat), ax=axes[0], annot=True, fmt=".2%", cmap="Blues"
+    )
+    axes[0].set_xlabel("Predicted labels")
+    axes[0].set_ylabel("Actual labels")
+
+    sns.heatmap(conf_mat, ax=axes[1], annot=True, cmap="Blues", fmt="")
+    axes[1].set_xlabel("Predicted labels")
+    axes[1].set_ylabel("Actual labels")
+
+    # Return the Figure object
+    return fig
+
+
+def plot_3d_kmeans(X_pca, labels_3):
+    fig = plt.figure(figsize=(10, 8))
+    ax = fig.add_subplot(111, projection="3d")
+
+    scatter = ax.scatter(
+        X_pca[:, 0], X_pca[:, 1], X_pca[:, 2], c=labels_3, cmap="viridis", marker="o"
+    )
+    ax.set_xlabel("Principal Component 1")
+    ax.set_ylabel("Principal Component 2")
+    ax.set_zlabel("Principal Component 3")
+    ax.set_title("3D Scatter Plot of Clusters in PCA Space")
+
+    # Add a colorbar to show the mapping of labels to colors
+    colorbar = plt.colorbar(scatter, ax=ax)
+    colorbar.set_label("Cluster Labels")
+    return fig
+
+
+def plot_3d_DBScan(X_pca, labels):
+    fig1 = plt.figure(figsize=(10, 8))
+    ax = fig1.add_subplot(111, projection="3d")
+
+    scatter = ax.scatter(
+        X_pca[:, 0], X_pca[:, 1], X_pca[:, 2], c=labels, cmap="viridis", marker="o"
+    )
+    ax.set_xlabel("Principal Component 1")
+    ax.set_ylabel("Principal Component 2")
+    ax.set_zlabel("Principal Component 3")
+    ax.set_title("3D Scatter Plot")
+
+    # Add a colorbar to show the mapping of labels to colors
+    colorbar = plt.colorbar(scatter, ax=ax)
+    colorbar.set_label("Cluster Labels")
+    return fig1
+
+
+def add_additional_canvas(parent_frame):
+    additional_canvas = tk.Canvas(
+        parent_frame, width=window_width - window_width / 5, height=window_height
+    )
+    additional_canvas.pack()
+    return additional_canvas
+
+
 def execute_model(
     model,
     canvas,
@@ -178,7 +257,7 @@ def execute_model(
     min_samples_split=None,
     eps=None,
 ):
-    if model == KNN or model == KMeans:
+    if model == KNN:
         classifier = model(k)
     elif model == DecisionTree:
         classifier = model(max_depth, min_samples_split)
@@ -187,13 +266,22 @@ def execute_model(
     elif model == DBScan:
         classifier = model(eps, min_samples_split)
 
-    start_time = time.time()
-    classifier.fit(X_resampled, y_resampled)
-    y_pred = classifier.predict(X_test)
-    end_time = time.time()
-    RF_exec_time = end_time - start_time
-    metrics_result = compute_metrics(y_test, y_pred)
-    cm = confusion_matrix(y_test, y_pred)
+    if model == DecisionTree or model == RandomForest:
+        start_time = time.time()
+        classifier.fit(X_resampled, y_resampled)
+        y_pred = classifier.predict(X_test)
+        end_time = time.time()
+        RF_exec_time = end_time - start_time
+        metrics_result = compute_metrics(y_test, y_pred)
+        cm = confusion_matrix(y_test, y_pred)
+    elif model == KNN:
+        start_time = time.time()
+        classifier.fit(X_resampled, y_resampled)
+        y_pred = classifier.predict(X_test, visualize=False)
+        end_time = time.time()
+        RF_exec_time = end_time - start_time
+        metrics_result = compute_metrics(y_test, y_pred)
+        cm = confusion_matrix(y_test, y_pred)
 
     # Format the information
     info_text = f"Metrics:\n"
@@ -212,7 +300,91 @@ def execute_model(
     text_widget = tk.Text(canvas, wrap="word", width=40, height=10)
     text_widget.insert(tk.END, info_text)
     text_widget.pack()
-    plot_confusion_matrix(cm)
+    canvas_ad = add_additional_canvas(parent_frame=canvas)
+    fig = plot_cm(cm)
+    img = FigureCanvasTkAgg(fig, master=canvas_ad)
+    img.draw()
+    img.get_tk_widget().pack()
+
+
+def execute_unsupervised_model(model, canvas, k=None, eps=None, min_samples_split=None):
+    global start_time, end_time
+    if model == KMeans:
+        classifier = model(k)
+        start_time = time.time()
+        classifier.fit(X, plot_steps=False)
+        labels = classifier.predict(X)
+        end_time = time.time()
+    elif model == DBScan:
+        classifier = model(eps, min_samples_split)
+        start_time = time.time()
+        classifier.fit(X, plot_steps=False)
+        labels = classifier.cluster_labels
+        end_time = time.time()
+
+    RF_exec_time = end_time - start_time
+    info_text = f"Results:\n"
+    info_text += f"Execution Time: {RF_exec_time:.2f} seconds\n"
+    info_text += f"Number of clusters: {len(np.unique(labels)):.2f}\n"
+    info_text += f"Silhouette Score: {silhouette_score(X, labels):.2f}"
+
+    for widget in canvas.winfo_children():
+        widget.destroy()
+
+    # Create or update a text widget in the canvas
+    text_widget = tk.Text(canvas, wrap="word", width=40, height=10)
+    text_widget.insert(tk.END, info_text)
+    text_widget.pack()
+
+    if model == DBScan:
+        canvas_ad = add_additional_canvas(parent_frame=canvas)
+        fig = plot_3d_DBScan(X_pca, labels)
+        img = FigureCanvasTkAgg(fig, master=canvas_ad)
+        img.draw()
+        img.get_tk_widget().pack()
+    elif model == KMeans:
+        canvas_ad = add_additional_canvas(parent_frame=canvas)
+        fig = plot_3d_kmeans(X_pca, labels)
+        img = FigureCanvasTkAgg(fig, master=canvas_ad)
+        img.draw()
+        img.get_tk_widget().pack()
+
+
+def execute_apriori(canvas, df, apriori_df, minSup, min_conf):
+    global result
+    total_L, rules, result = apriori(df, apriori_df, minSup, min_conf)
+    print(result)
+
+    # Format the information
+    info_text = "Apriori Results:\n"
+
+    formatted_string = "\n".join([f"{key}: {value}" for key, value in result.items()])
+    info_text += formatted_string
+    # Clear existing widgets in the canvas
+    for widget in canvas.winfo_children():
+        widget.destroy()
+
+    # Create or update a text widget in the canvas
+    text_widget = tk.Text(canvas, wrap="word", width=40, height=10)
+    text_widget.insert(tk.END, formatted_string)
+    text_widget.pack()
+
+
+def execute_strong_rules(canvas, result):
+    strong_rules = [rule for rule, confidence in result.items() if confidence == 1.0]
+    info_text = "Strong Rules:\n"
+    formatted_string = "\n".join(
+        [f"{key}: {value}" for key, value in strong_rules.items()]
+    )
+    info_text += formatted_string
+    # Clear existing widgets in the canvas
+    for widget in canvas.winfo_children():
+        widget.destroy()
+
+    # Create or update a text widget in the canvas
+    text_widget = tk.Text(canvas, wrap="word", width=40, height=10)
+    text_widget.insert(tk.END, formatted_string)
+    text_widget.pack()
 
 
 # Create the main window
@@ -325,7 +497,7 @@ kmeans_button = ttk.Button(
     width=30,
     padding=5,
     text="K-Means",
-    command=lambda: execute_model(KMeans, canvas1, k=int(k_entry.get())),
+    command=lambda: execute_unsupervised_model(KMeans, canvas1, k=int(k_entry.get())),
 )
 kmeans_button.pack(pady=10)
 
@@ -413,7 +585,7 @@ DBScan_button = ttk.Button(
     width=30,
     padding=5,
     text="DBScan",
-    command=lambda: execute_model(
+    command=lambda: execute_unsupervised_model(
         DBScan,
         canvas1,
         eps=float(eps_entry.get()),
@@ -617,11 +789,20 @@ apriori_button = ttk.Button(
     width=30,
     padding=5,
     text="Apriori",
-    command=lambda: apriori(
-        df_1, apriori_df, int(minSup_entry.get()), int(minConf_entry.get())
+    command=lambda: execute_apriori(
+        canvas3, df_1, apriori_df, float(minSup_entry.get()), float(minConf_entry.get())
     ),
 )
 apriori_button.pack(pady=10)
+
+strong_rules_button = ttk.Button(
+    sidebar_frame,
+    width=30,
+    padding=5,
+    text="Strong Rules",
+    command=lambda: execute_strong_rules(canvas3, result),
+)
+strong_rules_button.pack(pady=10)
 
 # ------------------------------------------------------------
 

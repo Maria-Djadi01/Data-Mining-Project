@@ -42,8 +42,10 @@ def getTransDataset(df, transactions):
 
     for trans in transactions:
         itemsList = df.iloc[trans]
-        df_result.loc[len(df_result)] = {"Transaction": trans, "Items": list(set(itemsList))}
-
+        df_result.loc[len(df_result)] = {
+            "Transaction": trans,
+            "Items": list(set(itemsList)),
+        }
 
     return df_result
 
@@ -146,13 +148,13 @@ def apriori(df, apriori_df, minSupp, minConf):
         items.append(apriori_df[col].unique())
 
     # Calculate min supp
-    supp_min = int(minSupp * len(transactions) / 100)
-    conf_min = minConf / 100
+    # supp_min = int(minSupp * len(transactions) / 100)
+    # conf_min = minConf / 100
 
     total_L = {}
     trans_dataset = getTransDataset(df, transactions)
     candidates = calculateSupport(items, trans_dataset)
-    L = generate_frequent_items(candidates, supp_min)
+    L = generate_frequent_items(candidates, minSupp)
     total_L.update(L)
 
     k = 1
@@ -160,15 +162,16 @@ def apriori(df, apriori_df, minSupp, minConf):
         previous_dict = L
         associations = generate_k_associations(previous_dict, 2)
         candidates = calculateSupport(associations, trans_dataset, previous_dict, k)
-        L = generate_frequent_items(candidates, supp_min)
+        L = generate_frequent_items(candidates, minSupp)
         total_L.update(L)
         k += 1
     rules = generate_association_rules(total_L)
-    result = calculate_confidence(rules, total_L, conf_min)
+    result = calculate_confidence(rules, total_L, minConf)
     return total_L, rules, result
 
 
-# total_L, rules, result = apriori(apriori_df, 10, 60)
+# total_L, rules, result = apriori(df, apriori_df, 10, 60)
+# print(total_L)
 
 
 def perform_experiments(df, min_supp_range, min_conf_range):
@@ -176,7 +179,7 @@ def perform_experiments(df, min_supp_range, min_conf_range):
 
     for min_supp in min_supp_range:
         for min_conf in min_conf_range:
-            total_L, rules, result = apriori(df, min_supp, min_conf)
+            total_L, rules, result = apriori(df, apriori_df, min_supp, min_conf)
 
             experiment_results.append(
                 {
