@@ -14,17 +14,20 @@ from imblearn.under_sampling import RandomUnderSampler
 project_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, project_directory)
 
+
 from models.apriori import apriori
 from models.knn import KNN
 from models.decisionTree import DecisionTree
 from models.randomForest import RandomForest
 from models.K_Means import KMeans
+from models.DBScan import DBScan
 from src.utils import split_data, compute_metrics, plot_confusion_matrix
 from sklearn.metrics import confusion_matrix
 
 # Agriculture
 agri_eda_images = {
     "Data": r"C:\Users\HI\My-Github\Data-Mining-Project\reports\figures\Dataset_1\df_1.png",
+    # "Data": "../reports/figures/Dataset_1/df_1.png",
     "Columns": r"C:\Users\HI\My-Github\Data-Mining-Project\reports\figures\Dataset_1\info.png",
     "Quantiles": r"C:\Users\HI\My-Github\Data-Mining-Project\reports\figures\Dataset_1\descCol_1.png",
     "Histogram": r"C:\Users\HI\My-Github\Data-Mining-Project\reports\figures\Dataset_1\histo.png",
@@ -167,18 +170,26 @@ X_resampled, y_resampled = undersampler.fit_resample(X_train, y_train)
 
 
 def execute_model(
-    model, canvas, k=None, n_trees=None, max_depth=None, min_samples_split=None
+    model,
+    canvas,
+    k=None,
+    n_trees=None,
+    max_depth=None,
+    min_samples_split=None,
+    eps=None,
 ):
     if model == KNN or model == KMeans:
-        classidfier = model(k)
+        classifier = model(k)
     elif model == DecisionTree:
-        classidfier = model(max_depth, min_samples_split)
+        classifier = model(max_depth, min_samples_split)
     elif model == RandomForest:
-        classidfier = model(n_trees, max_depth, min_samples_split)
+        classifier = model(n_trees, max_depth, min_samples_split)
+    elif model == DBScan:
+        classifier = model(eps, min_samples_split)
 
     start_time = time.time()
-    classidfier.fit(X_resampled, y_resampled)
-    y_pred = classidfier.predict(X_test)
+    classifier.fit(X_resampled, y_resampled)
+    y_pred = classifier.predict(X_test)
     end_time = time.time()
     RF_exec_time = end_time - start_time
     metrics_result = compute_metrics(y_test, y_pred)
@@ -383,6 +394,33 @@ RF_button = ttk.Button(
     ),
 )
 RF_button.pack(pady=10)
+
+eps_entry = tk.Entry(sidebar_frame, width=30)
+eps_entry.pack(pady=10)
+eps_entry.insert(0, "Eps")
+eps_entry.config(fg="grey")
+eps_entry.bind(
+    "<FocusIn>",
+    lambda event, e=eps_entry: on_entry_click(e, "Eps"),
+)
+eps_entry.bind(
+    "<FocusOut>",
+    lambda event, e=eps_entry: on_focus_out(e, "Eps"),
+)
+
+DBScan_button = ttk.Button(
+    sidebar_frame,
+    width=30,
+    padding=5,
+    text="DBScan",
+    command=lambda: execute_model(
+        DBScan,
+        canvas1,
+        eps=float(eps_entry.get()),
+        min_samples_split=int(minSamples_entry.get()),
+    ),
+)
+DBScan_button.pack(pady=10)
 
 # ------------------------------------------------------------
 # COVID-19
