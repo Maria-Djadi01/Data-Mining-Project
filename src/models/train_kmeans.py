@@ -77,7 +77,7 @@ print(f"Number of clusters: {len(np.unique(labels))}")
 print(f"Silhouette score: {silhouette_score(X, labels)}")
 
 kmeans_3 = KMeans(k=3)
-kmeans_3.fit(X)
+kmeans_3.fit(X, plot_steps=True)
 labels_3 = kmeans_3.predict(X)
 print(f"Number of clusters: {len(np.unique(labels_3))}")
 print(f"Silhouette score: {silhouette_score(X, labels_3)}")
@@ -102,7 +102,7 @@ scatter = ax.scatter(X_pca[:, 0], X_pca[:, 1], X_pca[:, 2], c=labels, cmap='viri
 ax.set_xlabel('Principal Component 1')
 ax.set_ylabel('Principal Component 2')
 ax.set_zlabel('Principal Component 3')
-ax.set_title('3D Scatter Plot of Clusters in PCA Space')
+ax.set_title('K-Means Clustering K=2')
 
 # Add a colorbar to show the mapping of labels to colors
 colorbar = plt.colorbar(scatter, ax=ax)
@@ -130,8 +130,6 @@ plt.show()
 # ----------------------------------------------------------------
 # Plot the clusters K = 3
 # ----------------------------------------------------------------
-from mpl_toolkits.mplot3d import Axes3D
-
 fig = plt.figure(figsize=(10, 8))
 ax = fig.add_subplot(111, projection='3d')
 
@@ -139,7 +137,7 @@ scatter = ax.scatter(X_pca[:, 0], X_pca[:, 1], X_pca[:, 2], c=labels_3, cmap='vi
 ax.set_xlabel('Principal Component 1')
 ax.set_ylabel('Principal Component 2')
 ax.set_zlabel('Principal Component 3')
-ax.set_title('3D Scatter Plot of Clusters in PCA Space')
+ax.set_title('K-Means Clusters K=3')
 
 # Add a colorbar to show the mapping of labels to colors
 colorbar = plt.colorbar(scatter, ax=ax)
