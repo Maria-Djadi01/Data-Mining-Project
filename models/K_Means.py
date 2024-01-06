@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
+from sklearn.decomposition import PCA
 
 class KMeans():
     def __init__(self, k):
@@ -10,9 +11,15 @@ class KMeans():
         self.labels = None
         self.inertia = None
 
-    def fit(self, X, max_iter=100, distance='euclidean', plot_steps=True, combined_plot=True):
+    def fit(self, X, max_iter=100, distance='euclidean', plot_steps=False):
         self.distance = distance
-        X = np.array(X)  # Convert X to a numpy array
+        X = np.array(X)  
+        
+        # X_pca to be used for plotting
+        if X.shape[1] > 3:
+            pca = PCA(n_components=3)
+            X_pca = pca.fit_transform(X)
+        
         self.centroids = self._init_centroids_kmeans_plus_plus(X, self.k)
         for iteration in range(max_iter):
             self.clusters = self._create_clusters(X, self.centroids)
@@ -21,65 +28,42 @@ class KMeans():
             if self._is_converged(previous_centroids, self.centroids):
                 break
             if plot_steps:
-                if iteration % 5 == 0:
-                    self._plot_iteration(X, iteration + 1)
+                if iteration % 10 == 0:
+                    self._plot_iteration(X_pca, iteration)
 
         self.labels = self._get_cluster_labels(self.clusters, X)
         self.inertia = self._get_inertia(self.clusters, self.centroids, X)
 
         if plot_steps:
-            num_rows = (max_iter // 5) + 1
-            num_cols = 5
-
-            plt.figure(figsize=(15, 4 * num_rows))
-
-            for iteration in range(max_iter):
-                self.clusters = self._create_clusters(X, self.centroids)
-                previous_centroids = self.centroids
-                self.centroids = self._get_centroids(self.clusters, X)
-
-                if iteration % 5 == 0:
-                    plt.subplot(num_rows, num_cols, iteration // 5 + 1)
-
-                    cmap = ListedColormap(['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'])
-
-                    # Plot data points
-                    for cluster_idx, cluster in enumerate(self.clusters):
-                        plt.scatter(X[cluster][:, 0], X[cluster][:, 1], label=f'Cluster {cluster_idx}', cmap=cmap,
-                                    edgecolors='k')
-                        plt.scatter(self.centroids[:, 0], self.centroids[:, 1], marker='x', s=200, c='black',
-                                    label='Centroids')
-
-                        plt.title(f'K-Means Iteration {iteration + 1}')
-                        plt.xlabel('Feature 1')
-                        plt.ylabel('Feature 2')
-                        plt.legend()
-
-            plt.tight_layout()
-            plt.show()
+            self._plot_iteration(X, iteration + 1)
 
     def predict(self, X):
         X = np.array(X)  # Convert X to a numpy array
         clusters = self._create_clusters(X, self.centroids)
         return self._get_cluster_labels(clusters, X)
 
-    def _plot_iteration(self, X, iteration):
-        plt.figure(figsize=(8, 8))
-        cmap = ListedColormap(['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'])
+    def _plot_iteration(self, X_pca, iteration):
+        fig = plt.figure(figsize=(10, 8))
+        ax = fig.add_subplot(111, projection='3d')
 
-        # Plot data points
+        # plot the clusters and centroids
+        
+        # plot the clusters
         for cluster_idx, cluster in enumerate(self.clusters):
-            plt.scatter(X[cluster][:, 0], X[cluster][:, 1], label=f'Cluster {cluster_idx}', cmap=cmap, edgecolors='k')
+            cluster_points = X_pca[cluster]
+            ax.scatter(cluster_points[:, 0], cluster_points[:, 1], cluster_points[:, 2])
+            
+        # plot the centroids
+        ax.scatter(self.centroids[:, 0], self.centroids[:, 1], self.centroids[:, 2], c='red', marker='x', s=100)
+        
+        
+        ax.set_xlabel('Principal Component 1')
+        ax.set_ylabel('Principal Component 2')
+        ax.set_zlabel('Principal Component 3')
+        ax.set_title(f"Iteration {iteration}")
 
-        # Plot centroids
-        plt.scatter(self.centroids[:, 0], self.centroids[:, 1], marker='x', s=200, c='black', label='Centroids')
-
-        plt.title(f'K-Means Iteration {iteration}')
-        plt.xlabel('Feature 1')
-        plt.ylabel('Feature 2')
-        plt.legend()
         plt.show()
-    
+
     def predict(self, X):
         X = np.array(X)  # Convert X to a numpy array
         clusters = self._create_clusters(X, self.centroids)

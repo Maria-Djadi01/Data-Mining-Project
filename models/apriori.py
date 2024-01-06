@@ -42,9 +42,8 @@ def getTransDataset(df, transactions):
 
     for trans in transactions:
         itemsList = df.iloc[trans]
-        df_result = df_result.append(
-            {"Transaction": trans, "Items": list(set(itemsList))}, ignore_index=True
-        )
+        df_result.loc[len(df_result)] = {"Transaction": trans, "Items": list(set(itemsList))}
+
 
     return df_result
 
